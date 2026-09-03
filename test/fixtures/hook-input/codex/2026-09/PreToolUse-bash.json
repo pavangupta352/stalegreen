@@ -1,0 +1,14 @@
+{
+  "session_id": "019a0000-0000-7000-8000-000000000001",
+  "turn_id": "019a0000-0000-7000-8000-00000000aaaa",
+  "transcript_path": null,
+  "cwd": "/home/dev/app",
+  "hook_event_name": "PreToolUse",
+  "model": "model-c",
+  "permission_mode": "default",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "pnpm test | tail -5"
+  },
+  "tool_use_id": "exec-4ed5b0c7-ff06-4490-8ce3-9d22cb08143b"
+}

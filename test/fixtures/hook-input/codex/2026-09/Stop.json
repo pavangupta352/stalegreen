@@ -1,0 +1,11 @@
+{
+  "session_id": "019a0000-0000-7000-8000-000000000001",
+  "turn_id": "019a0000-0000-7000-8000-00000000aaaa",
+  "transcript_path": null,
+  "cwd": "/home/dev/app",
+  "hook_event_name": "Stop",
+  "model": "model-c",
+  "permission_mode": "default",
+  "stop_hook_active": false,
+  "last_assistant_message": "All 41 tests pass."
+}

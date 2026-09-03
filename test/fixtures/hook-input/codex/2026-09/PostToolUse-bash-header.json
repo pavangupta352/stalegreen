@@ -1,0 +1,15 @@
+{
+  "session_id": "019a0000-0000-7000-8000-000000000001",
+  "turn_id": "019a0000-0000-7000-8000-00000000aaaa",
+  "transcript_path": null,
+  "cwd": "/home/dev/app",
+  "hook_event_name": "PostToolUse",
+  "model": "model-c",
+  "permission_mode": "default",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "npx vitest run"
+  },
+  "tool_response": "Script failed\nWall time 3.1 seconds\nOutput:\n RUN  v3.2.7 /home/dev/app\n\n ❯ src/hold.test.ts (2 tests | 1 failed)\n   × keeps the hold\n\n Test Files  1 failed (1)\n      Tests  1 failed | 1 passed (2)\n",
+  "tool_use_id": "exec-5e5ce670-3981-40da-9505-75f53782ca1b"
+}

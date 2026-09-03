@@ -45,8 +45,8 @@ export function readFixture(...parts: string[]): string {
   return readFileSync(join(repoRoot, "test", "fixtures", ...parts), "utf8");
 }
 
-export function loadHookFixture(name: string): Record<string, unknown> {
-  return JSON.parse(readFixture("hook-input", "claude", "2026-09", name)) as Record<string, unknown>;
+export function loadHookFixture(name: string, harness: "claude" | "codex" = "claude"): Record<string, unknown> {
+  return JSON.parse(readFixture("hook-input", harness, "2026-09", name)) as Record<string, unknown>;
 }
 
 export interface SpawnResult {
