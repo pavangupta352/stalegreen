@@ -1,6 +1,7 @@
 # stalegreen
 
 [![ci](https://github.com/pavangupta352/stalegreen/actions/workflows/ci.yml/badge.svg)](https://github.com/pavangupta352/stalegreen/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/stalegreen?label=npm&color=cb3837)](https://www.npmjs.com/package/stalegreen)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Hooks that keep a coding agent's green claims honest: every verification run is recorded unmasked, and "done" is blocked when the evidence is stale, failed or masked.
@@ -8,8 +9,6 @@ Hooks that keep a coding agent's green claims honest: every verification run is 
 Zero tokens, zero network, zero telemetry. Every verdict is deterministic and cites a receipt.
 
 ![An agent runs the tests, edits a file, says all tests pass, and is stopped with the receipt and the edited file; it reruns, sees the failure, fixes it and ends green](docs/assets/demo.gif)
-
-> Status: pre-release. The engine, the hooks for Claude Code, Codex and DeepSeek Harness, the freshness gate, the plugin packaging and the session replay are complete and tested. The npm package lands next. Until then, build from source (see below).
 
 ## The problem
 
@@ -58,13 +57,11 @@ As a Claude Code plugin, from inside Claude Code:
 
 That registers PreToolUse, PostToolUse, Stop and SubagentStop from the plugin's own copy of the hook. Nothing is downloaded beyond the repository and nothing runs at install time; the hook has no dependencies.
 
-Or with the CLI, for Claude Code, Codex or both. Until the first npm release, build from source:
+Or with the CLI, for Claude Code, Codex or both:
 
 ```sh
-git clone https://github.com/pavangupta352/stalegreen
-cd stalegreen && npm install && npm run build
-node dist/cli.js install --claude     # or --codex, or --all
-node dist/cli.js doctor
+npx stalegreen install --all     # or --claude, or --codex
+npx stalegreen doctor
 ```
 
 `install` copies the compiled hook to `~/.stalegreen/bin/hook.js` and registers the same four events: for Claude Code in `~/.claude/settings.json`, for Codex in `~/.codex/hooks.json`. Add `--project` for the repository's `.claude/settings.json` or `.codex/hooks.json`, `--advisory` to record verdicts without blocking. `uninstall` removes them. Use one of the two routes for Claude Code, not both, or every run is recorded twice.
@@ -194,12 +191,12 @@ Green claims     375   in 16 sessions, 10 repeated status lines counted once
   masked          23    6%   the exit status was hidden and nothing readable was left
   no run          51   14%   nothing matching ran in the session
 
-Verification runs   8,950
-  exit hidden       8,748   98%   piped, redirected, chained or sent to /dev/null
-  hid a failure     1,359   15%   exit hidden, failure marker in the visible output
-  no result         1,487   17%   exit hidden and no summary line either
+Verification runs   9,011
+  exit hidden       8,794   98%   piped, redirected, chained or sent to /dev/null
+  hid a failure     1,372   15%   exit hidden, failure marker in the visible output
+  no result         1,502   17%   exit hidden and no summary line either
 
-26% of green claims were stale (98 of 375); 98% of verification runs hid their exit status (8748 of 8950).
+26% of green claims were stale (98 of 375); 98% of verification runs hid their exit status (8794 of 9011).
 ```
 
 Every verdict behind those numbers was reviewed by hand. The stale ones are real edits after the quoted run. The failed ones are builds that exited 1 for months while every summary said "build green". The command reads transcripts locally and prints aggregates only; `stalegreen history --explain` lists the individual claims with their receipts.
