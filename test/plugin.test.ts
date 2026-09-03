@@ -67,6 +67,6 @@ describe("Claude Code plugin packaging", () => {
   });
 
   it("keeps the npm tarball to the CLI, the library and the docs", () => {
-    expect(pkg.files).toEqual(["dist", "README.md", "LICENSE"]);
+    expect(pkg.files).toEqual(["dist/*.js", "dist/*.cjs", "dist/*.d.ts", "dist/*.d.cts", "README.md", "LICENSE"]);
   });
 });
