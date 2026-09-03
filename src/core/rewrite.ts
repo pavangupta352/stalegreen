@@ -62,9 +62,14 @@ export function refusalReason(parsed: ParsedCommand, detection: Detection): stri
   return null;
 }
 
+/** The log path as the POSIX shell sees it; Git Bash on Windows takes forward slashes in every position. */
+function shellPath(p: string): string {
+  return process.platform === "win32" ? p.replace(/\\/g, "/") : p;
+}
+
 function wrapper(head: string, id: string, log: string, tailLines: number, tee: { files: string[]; append: boolean } | null): string {
-  const q = shQuote(log);
-  const dir = shQuote(dirname(log));
+  const q = shQuote(shellPath(log));
+  const dir = shQuote(shellPath(dirname(log)));
   const parts: string[] = [];
   parts.push(`__sg_log=${q}`);
   parts.push(`mkdir -p ${dir}`);
