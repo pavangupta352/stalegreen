@@ -1,0 +1,20 @@
+{
+  "session_id": "5f1c9d2e-4a7b-4c1d-9e2f-1a2b3c4d5e6f",
+  "prompt_id": "550e8400-e29b-41d4-a716-446655440000",
+  "transcript_path": "/home/dev/.claude/projects/-home-dev-app/5f1c9d2e-4a7b-4c1d-9e2f-1a2b3c4d5e6f.jsonl",
+  "cwd": "/home/dev/app",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "pnpm test",
+    "description": "Run tests"
+  },
+  "tool_use_id": "toolu_01ABC123DEF456",
+  "tool_response": {
+    "stdout": " RUN  v3.2.7 /home/dev/app\n\n Test Files  2 passed (2)\n      Tests  41 passed (41)\n   Duration  412ms\n",
+    "stderr": "",
+    "interrupted": false,
+    "exit_code": 0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "session_id": "5f1c9d2e-4a7b-4c1d-9e2f-1a2b3c4d5e6f",
+  "prompt_id": "550e8400-e29b-41d4-a716-446655440000",
+  "transcript_path": "/home/dev/.claude/projects/-home-dev-app/5f1c9d2e-4a7b-4c1d-9e2f-1a2b3c4d5e6f/subagents/agent-a1b2c3d4.jsonl",
+  "cwd": "/home/dev/app",
+  "permission_mode": "default",
+  "hook_event_name": "SubagentStop",
+  "agent_id": "a1b2c3d4",
+  "agent_type": "general-purpose",
+  "stop_hook_active": false,
+  "last_assistant_message": "Done. tsc is clean and all 41 tests pass."
+}

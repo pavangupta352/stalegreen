@@ -1,0 +1,16 @@
+{
+  "session_id": "5f1c9d2e-4a7b-4c1d-9e2f-1a2b3c4d5e6f",
+  "prompt_id": "550e8400-e29b-41d4-a716-446655440000",
+  "transcript_path": "/home/dev/.claude/projects/-home-dev-app/5f1c9d2e-4a7b-4c1d-9e2f-1a2b3c4d5e6f.jsonl",
+  "cwd": "/home/dev/app",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "pnpm test | tail -5",
+    "description": "Run tests",
+    "timeout": 120000,
+    "run_in_background": false
+  },
+  "tool_use_id": "toolu_01ABC123DEF456"
+}
