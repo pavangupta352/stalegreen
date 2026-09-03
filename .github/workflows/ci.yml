@@ -1,0 +1,55 @@
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_call:
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [20, 22]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Check the package layout and its types
+        run: |
+          npx --yes publint
+          npx --yes @arethetypeswrong/cli --pack .
+      - name: Install the packed tarball into a scratch project and use it both ways
+        run: |
+          npm pack --silent
+          mkdir -p /tmp/scratch && cd /tmp/scratch
+          npm init -y >/dev/null
+          npm install --silent "$GITHUB_WORKSPACE"/stalegreen-*.tgz
+          npx stalegreen --version
+          node -e "const s=require('stalegreen'); if(!s.detect('npm test')) throw new Error('cjs detect failed'); console.log('cjs ok', s.VERSION)"
+          node --input-type=module -e "import { detect, VERSION } from 'stalegreen'; if(!detect('pytest -q')) throw new Error('esm detect failed'); console.log('esm ok', VERSION)"
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
