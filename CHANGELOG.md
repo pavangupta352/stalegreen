@@ -53,7 +53,9 @@ Keep a Changelog, and the project uses semantic versioning.
   shortened, secrets masked and the agent's prose replaced by the matched
   claim. The false-block issue template asks for it.
 - A release workflow that publishes to npm through trusted publishing on a
-  version tag and creates the GitHub release.
+  version tag and creates the GitHub release. CI runs the suite on Ubuntu and
+  macOS with Node 20 and 22, and the pure-logic tests on Windows, where hook
+  paths and report paths are written with forward slashes.
 - Claude Code plugin packaging: `plugin/` holds the manifest, the hook
   registration (`${CLAUDE_PLUGIN_ROOT}/hook.js`) and a copy of the compiled
   hook that `npm run build` refreshes and a test keeps identical to the
