@@ -10,6 +10,7 @@ import { describeCounts, readReceipts, readVerdicts, runLogPath } from "../core/
 import { listSessions, readJsonl } from "../core/store.js";
 import { VERSION } from "../version.js";
 import { DEFAULT_HISTORY, runHistory } from "./history.js";
+import { DEFAULT_STATS, runStats } from "./stats.js";
 import { CLAUDE_EVENTS, claudeHookStatus, installClaude, uninstallClaude } from "./install.js";
 
 const HELP = `stalegreen ${VERSION}
@@ -24,6 +25,8 @@ Usage:
   stalegreen receipt <id> [--session <id>]               a run's receipt and the tail of its log
   stalegreen history [--since 30d] [--include-none] [--all-messages] [--explain] [--json] [--limit N]
                                                          replay past sessions: stale, failed and masked claims
+  stalegreen stats [--since 90d] [--json]                stale, failed, masked and unbacked claim rates and the
+                                                         hidden-exit rate of verification runs, per model
   stalegreen doctor                                      hooks, node, store health and the last verdicts
   stalegreen --version
   stalegreen --help
@@ -234,6 +237,18 @@ function cmdHistory(args: Args): Promise<number> {
   });
 }
 
+function cmdStats(args: Args): Promise<number> {
+  const since = args.flags.get("since");
+  const limit = args.flags.get("limit");
+  return runStats({
+    ...DEFAULT_STATS,
+    since: typeof since === "string" ? since : DEFAULT_STATS.since,
+    json: args.flags.has("json"),
+    allMessages: args.flags.has("all-messages"),
+    limit: typeof limit === "string" ? Number(limit) || 0 : 0,
+  });
+}
+
 export async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   if (args.flags.has("version") || args.flags.has("v")) {
@@ -251,6 +266,8 @@ export async function main(argv: string[]): Promise<number> {
       return cmdReceipt(args);
     case "history":
       return cmdHistory(args);
+    case "stats":
+      return cmdStats(args);
     case "doctor":
       return cmdDoctor();
     case "install":

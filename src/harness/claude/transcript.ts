@@ -50,6 +50,8 @@ export interface RunStats {
   inconclusive: number;
   background: number;
   byCategory: Record<Category, number>;
+  /** The same tallies per model, keyed by the model that issued the command. */
+  byModel: Record<string, { total: number; masked: number; maskedWithFailMarkers: number; maskedInconclusive: number }>;
 }
 
 export interface SessionReplay {
@@ -94,6 +96,7 @@ interface RunEvent {
   scope: Scope;
   toolUseId: string;
   agent: string | null;
+  model: string | null;
 }
 interface EditEventRaw {
   kind: "edit";
@@ -118,8 +121,10 @@ interface JsonRecord {
 const INTERESTING = /"type":"(?:assistant|user)"/;
 const TEXT_CAP = 32 * 1024;
 
-export function claudeProjectsDir(): string {
-  return join(homedir(), ".claude", "projects");
+/** `~/.claude/projects`, or `$CLAUDE_CONFIG_DIR/projects` when Claude Code is configured elsewhere. */
+export function claudeProjectsDir(env: NodeJS.ProcessEnv = process.env): string {
+  const configDir = env.CLAUDE_CONFIG_DIR;
+  return join(configDir && configDir.trim() ? configDir : join(homedir(), ".claude"), "projects");
 }
 
 /** Top-level session files, newest first, optionally only those touched since `since`. */
@@ -216,7 +221,7 @@ function persistedOutput(tur: Record<string, unknown>, max: number): string | nu
 /** Reads one transcript file into timeline events. */
 export async function readClaudeEvents(file: string, scope: Scope, opts: ReplayOptions, meta: { entrypoint: string | null; cwd?: string | null; models: Record<string, number>; assistantMessages: number; toolCalls: number; badLines: number; firstTs: string | null; lastTs: string | null }): Promise<Event[]> {
   const events: Event[] = [];
-  const pending = new Map<string, { name: string; input: Record<string, unknown>; ts: string }>();
+  const pending = new Map<string, { name: string; input: Record<string, unknown>; ts: string; model: string | null }>();
   const toolMessageIds = new Set<string>();
   const seenMessageIds = new Set<string>();
   const maxOutput = opts.maxOutputBytes ?? 256 * 1024;
@@ -254,7 +259,7 @@ export async function readClaudeEvents(file: string, scope: Scope, opts: ReplayO
           meta.toolCalls++;
           toolMessageIds.add(id);
           const input = b.input && typeof b.input === "object" ? (b.input as Record<string, unknown>) : {};
-          pending.set(b.id, { name: b.name, input, ts });
+          pending.set(b.id, { name: b.name, input, ts, model: typeof msg.model === "string" ? msg.model : null });
           const edit = editFromTool(b.name, input);
           if (edit) events.push({ kind: "edit", ts, seq, path: edit.path, edit: edit.kind, scope, agent });
           // Bash edits are recorded when the result arrives, so git operations can be judged by their output.
@@ -286,7 +291,7 @@ export async function readClaudeEvents(file: string, scope: Scope, opts: ReplayO
           else if (typeof tur.stdout === "string" || typeof tur.stderr === "string") output = `${typeof tur.stdout === "string" ? tur.stdout : ""}\n${typeof tur.stderr === "string" ? tur.stderr : ""}`;
         }
         const cwd = typeof record.cwd === "string" ? record.cwd : "";
-        events.push({ kind: "run", ts, seq, command, output: clipOutput(output, maxOutput), exit, interrupted, background, cwd, scope, toolUseId: b.tool_use_id, agent });
+        events.push({ kind: "run", ts, seq, command, output: clipOutput(output, maxOutput), exit, interrupted, background, cwd, scope, toolUseId: b.tool_use_id, agent, model: call.model });
         for (const e of editsFromBash(command, output)) events.push({ kind: "edit", ts, seq, path: e.path, edit: e.kind, scope, agent });
       }
     }
@@ -329,7 +334,7 @@ export async function replayClaudeSession(file: string, opts: ReplayOptions = {}
   const receipts: Receipt[] = [];
   const edits: EditEvent[] = [];
   const verdicts: ReplayVerdict[] = [];
-  const runs: RunStats = { total: 0, masked: 0, maskedWithFailMarkers: 0, maskedInconclusive: 0, failed: 0, passed: 0, inconclusive: 0, background: 0, byCategory: { test: 0, typecheck: 0, lint: 0, build: 0 } };
+  const runs: RunStats = { total: 0, masked: 0, maskedWithFailMarkers: 0, maskedInconclusive: 0, failed: 0, passed: 0, inconclusive: 0, background: 0, byCategory: { test: 0, typecheck: 0, lint: 0, build: 0 }, byModel: {} };
   let claims = 0;
   let seqId = 0;
   let mainTexts = 0;
@@ -362,6 +367,11 @@ export async function replayClaudeSession(file: string, opts: ReplayOptions = {}
         if (r.masked) runs.masked++;
         if (r.masked && r.verdict === "fail" && r.exit === null) runs.maskedWithFailMarkers++;
         if (r.masked && r.verdict === "inconclusive") runs.maskedInconclusive++;
+        const perModel = (runs.byModel[e.model ?? "unknown"] ??= { total: 0, masked: 0, maskedWithFailMarkers: 0, maskedInconclusive: 0 });
+        perModel.total++;
+        if (r.masked) perModel.masked++;
+        if (r.masked && r.verdict === "fail" && r.exit === null) perModel.maskedWithFailMarkers++;
+        if (r.masked && r.verdict === "inconclusive") perModel.maskedInconclusive++;
         if (r.verdict === "fail") runs.failed++;
         else if (r.verdict === "pass") runs.passed++;
         else runs.inconclusive++;
