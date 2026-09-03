@@ -58,7 +58,7 @@ agent can never be trapped.
 | `core/claims.ts` | The claim grammar. |
 | `core/freshness.ts` | Receipt selection and the verdict. |
 | `harness/hooks.ts` | The three handlers, shared. A small adapter per harness supplies the turn id, the shell output shape, the edit tools, the allow decision and the block format. |
-| `harness/claude`, `harness/codex` | The adapters, the permission mirror for Claude Code, and the transcript readers behind `history` and `stats`. |
+| `harness/claude`, `harness/codex`, `harness/dsh` | The adapters, the permission mirror for Claude Code, and the transcript readers behind `history` and `stats`. The DeepSeek Harness adapter is driven by the Cordis plugin in `dsh-plugin-stalegreen/`. |
 
 The hook binary is one file with no dependencies. Cold start is measured in
 CI against a bare `node -e 0` and must stay under 50 ms at p95 above it.
@@ -268,15 +268,15 @@ and a subagent's own stop is judged under its own turn state.
 
 ## Harness adapters
 
-| | Claude Code | Codex |
-| --- | --- | --- |
-| Shell tool | `Bash`, `tool_response` with `stdout`, `stderr`, `exit_code` | `Bash`, `tool_response` is the model-facing text, sometimes with a `Script completed` or `Exit code: N` header, usually without any exit status |
-| Edit tools | `Edit`, `Write`, `MultiEdit`, `NotebookEdit` | `apply_patch` with the patch in `tool_input.command` |
-| Background | `run_in_background`, resolved through `TaskOutput` or `BashOutput` | `Script running with cell ID N`, resolved through the `wait` tool |
-| Rewrite | `updatedInput`, allow only when the permission mirror agrees | `updatedInput` requires `permissionDecision: allow` |
-| Block | exit 2 with the message on stderr | `{"decision": "block", "reason": ...}` on stdout |
-| Turn id | `prompt_id` | `turn_id` |
-| Registration | `settings.json` or the plugin's `hooks/hooks.json` | `hooks.json`, trusted once through `/hooks` |
+| | Claude Code | Codex | DeepSeek Harness |
+| --- | --- | --- | --- |
+| Shell tool | `Bash`, `tool_response` with `stdout`, `stderr`, `exit_code` | `Bash`, `tool_response` is the model-facing text, sometimes with a `Script completed` or `Exit code: N` header, usually without any exit status | `bash`, result text with a `[exit code: N]` marker on failure |
+| Edit tools | `Edit`, `Write`, `MultiEdit`, `NotebookEdit` | `apply_patch` with the patch in `tool_input.command` | `edit`, `write`, `str_replace_editor` |
+| Background | `run_in_background`, resolved through `TaskOutput` or `BashOutput` | `Script running with cell ID N`, resolved through the `wait` tool | `run_in_background`, resolved through `job_output` |
+| Rewrite | `updatedInput`, allow only when the permission mirror agrees | `updatedInput` requires `permissionDecision: allow` | none; the waterfall can only allow, ask or deny |
+| Block | exit 2 with the message on stderr | `{"decision": "block", "reason": ...}` on stdout | `agent.steer()` with the message, one more step |
+| Turn id | `prompt_id` | `turn_id` | the agent's `turn` number |
+| Registration | `settings.json` or the plugin's `hooks/hooks.json` | `hooks.json`, trusted once through `/hooks` | `dsh plugin add dsh-plugin-stalegreen` |
 
 The transcript readers behind `history` and `stats` follow the same
 shapes. Codex rollouts hold the shell commands inside JavaScript exec cells
