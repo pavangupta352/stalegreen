@@ -44,13 +44,13 @@ The README demo is rendered with `vhs docs/assets/demo.tape`.
 
 ## Rules that keep the tool honest
 
-- Fail open. Nothing a hook does may break the agent; catch, count, allow.
+- Fail open. Nothing a hook does may break the agent; record the error, count it, allow.
 - Every verdict cites a receipt. No heuristics that block without one.
 - Unparseable output is `inconclusive`, never `fail`.
 - No network calls, no telemetry, no runtime dependencies.
 - Never print transcript content in tests, fixtures or logs.
-- The README never uses the words lie, catch, bust or fraud. This is evidence
-  hygiene, not a lie detector.
+- The README never frames this as detecting dishonesty. This is evidence
+  hygiene: it checks evidence, not intent.
 
 ## Before you open a pull request
 

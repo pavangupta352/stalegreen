@@ -47,7 +47,7 @@ A category is steered at most once per turn, so the agent can never be trapped.
 
 ## What it is not
 
-Not a lie detector: it never judges intent, it checks whether the evidence behind a claim is fresh and complete. Not a replacement for the runner's judgement: a pass is the runner's own summary, never an inference from silence alone.
+Not a judge of intent: it checks whether the evidence behind a claim is fresh and complete. Not a replacement for the runner's judgement: a pass is the runner's own summary, never an inference from silence alone.
 
 ## License
 

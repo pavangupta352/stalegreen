@@ -9,7 +9,7 @@ Zero tokens, zero network, zero telemetry. Every verdict is deterministic and ci
 
 ![An agent runs the tests, edits a file, says all tests pass, and is stopped with the receipt and the edited file; it reruns, sees the failure, fixes it and ends green](docs/assets/demo.gif)
 
-> Status: pre-release. The engine, the Claude Code and Codex hooks, the freshness gate and the session replay are complete and tested. The npm package and the plugin manifests land next. Until then, build from source (see below).
+> Status: pre-release. The engine, the hooks for Claude Code, Codex and DeepSeek Harness, the freshness gate, the plugin packaging and the session replay are complete and tested. The npm package lands next. Until then, build from source (see below).
 
 ## The problem
 
@@ -18,7 +18,7 @@ Coding agents say "all tests pass" a lot. Two things go wrong with that sentence
 1. **Stale green.** The test run the agent is quoting happened before its own later edits. Nothing was rerun.
 2. **Masked results.** The agent piped the runner through `tail -5`, `grep`, `|| true` or `; echo done`, so the exit status and the summary line never reached the transcript. The run looked fine because nothing could look wrong.
 
-Outright contradictions, where the last run failed and the agent still reported green, are rare. Stale and masked evidence is not. stalegreen is evidence hygiene, not a lie detector.
+Outright contradictions, where the last run failed and the agent still reported green, are rare. Stale and masked evidence is not. stalegreen is evidence hygiene: it checks the evidence behind a claim, not the intent behind it.
 
 ## What it does
 
@@ -218,7 +218,7 @@ stalegreen redact [--session <id>] [--out f]  a shareable copy of a session for 
 
 ## What this is not
 
-- Not a lie detector. It never judges intent and never scores anything; it checks whether the evidence behind a claim is fresh and complete.
+- Not a judge of intent. It never scores anything; it checks whether the evidence behind a claim is fresh and complete.
 - Not a session analyzer or dashboard.
 - Not a file-existence checker. Heredoc and `sed -i` edits are invisible in transcripts, so freshness comes from the working tree, not from what the agent said it edited.
 
@@ -226,7 +226,7 @@ stalegreen redact [--session <id>] [--out f]  a shareable copy of a session for 
 
 - [backcheck](https://github.com/VectorInstitute/backcheck) (Vector Institute, Apache-2.0): a retroactive auditor for Claude Code with a large set of runner parsers, hedge lists and test-integrity checks. The closest engine to this one; its hedge lists and false-alarm cases informed the claim grammar here.
 - tycho (Apache-2.0): a deterministic cross-harness completion hook with an attestation trailer. The closest live gate.
-- red-handed, nuhuh, truthguard, redpen, groundtruth, verify-gate and proof: Stop-hook gates and audits for Claude Code that attack the same pain from the "did the agent lie" angle.
+- red-handed, nuhuh, truthguard, redpen, groundtruth, verify-gate and proof: Stop-hook gates and audits for Claude Code that attack the same pain from the "did the agent tell the truth" angle.
 - superpowers' verification-before-completion rule: no completion claims without fresh evidence. stalegreen is the deterministic layer that makes that rule checkable.
 - Claude Code `/goal` and `/verify`, Codex `/goal` and Guardian, Grok Build's verifier: model-judged completion checks. They trust what lands in the transcript; stalegreen makes sure what lands there is real and fresh.
 - @letta-ai/trajectory: transcript readers for many harnesses.

@@ -295,7 +295,7 @@ produced.
 
 ## Non-goals
 
-- Judging intent. Nothing here scores an agent or calls anything a lie.
+- Judging intent. Nothing here scores an agent or passes judgement on what it said.
 - Replacing the runner's judgement. A pass is the runner's own summary, never
   an inference from silence alone, except for tools that are silent on
   success and only when the exit or the visible output supports it.
