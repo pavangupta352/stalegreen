@@ -52,12 +52,14 @@ export interface PathContext {
 
 /** Shortens absolute paths: inside a repository to `<repo>/...`, under the home directory to `~/...`, elsewhere to `<path>/<name>`. */
 export function redactPaths(text: string, ctx: PathContext): string {
-  const repos = [...ctx.repos].filter(Boolean).sort((a, b) => b.length - a.length);
-  let out = text;
+  // Windows paths are reported with forward slashes so a report reads the same everywhere.
+  const slash = (s: string) => (process.platform === "win32" ? s.replace(/\\/g, "/") : s);
+  const repos = [...ctx.repos].filter(Boolean).map(slash).sort((a, b) => b.length - a.length);
+  let out = slash(text);
   for (const repo of repos) {
     out = out.split(repo).join("<repo>");
   }
-  if (ctx.home) out = out.split(ctx.home).join("~");
+  if (ctx.home) out = out.split(slash(ctx.home)).join("~");
   return out.replace(/(?<![\w<>~.])\/(?:[\w.@%+-]+\/){1,}[\w.@%+-]+/g, (m) => {
     if (m.startsWith("/dev/") || m.startsWith("/usr/") || m.startsWith("/bin/") || m.startsWith("/opt/homebrew/bin/")) return m;
     return `<path>/${basename(m)}`;

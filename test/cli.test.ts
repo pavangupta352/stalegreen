@@ -141,7 +141,7 @@ describe("dist/cli.js", () => {
     const hooks = JSON.parse(readFileSync(join(codexHome, "hooks.json"), "utf8")) as { hooks: Record<string, { matcher?: string; hooks: { command: string; timeout: number }[] }[]> };
     expect(Object.keys(hooks.hooks).sort()).toEqual(["PostToolUse", "PreToolUse", "Stop", "SubagentStop"]);
     expect(hooks.hooks.PreToolUse?.[0]?.matcher).toBe("^Bash$");
-    expect(hooks.hooks.PreToolUse?.[0]?.hooks[0]?.command).toMatch(/node .*hook\.js codex PreToolUse$/);
+    expect(hooks.hooks.PreToolUse?.[0]?.hooks[0]?.command).toMatch(/node .*hook\.js"? codex PreToolUse$/);
     expect(hooks.hooks.PostToolUse?.[0]?.matcher).toContain("apply_patch");
     expect(cli(["doctor"]).stdout).toContain("codex user hooks: PreToolUse, PostToolUse, Stop, SubagentStop");
     const again = cli(["install", "--codex"]);

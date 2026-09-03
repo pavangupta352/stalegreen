@@ -94,7 +94,9 @@ function writeSettings(file: string, settings: ClaudeSettings): void {
 }
 
 export function hookCommand(hookPath: string, event: string, harness: HarnessName = "claude"): string {
-  const quoted = /[\s"'$`\\]/.test(hookPath) ? `"${hookPath.replace(/(["\\$`])/g, "\\$1")}"` : hookPath;
+  // Forward slashes work for node, cmd and Git Bash alike on Windows, and need no escaping.
+  const path = process.platform === "win32" ? hookPath.replace(/\\/g, "/") : hookPath;
+  const quoted = /[\s"'$`\\]/.test(path) ? `"${path.replace(/(["\\$`])/g, "\\$1")}"` : path;
   return `node ${quoted} ${harness} ${event}`;
 }
 

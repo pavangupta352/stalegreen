@@ -1,5 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { apply, blocksToText, type ContextLike } from "../dsh-plugin-stalegreen/src/index.js";
 import { readEdits, readPending, readReceipts, readVerdicts } from "../src/core/receipts.js";
@@ -41,7 +41,7 @@ describe("DeepSeek Harness adapter", () => {
     runDshHook("PostToolUse", { ...base, hook_event_name: "PostToolUse", tool_name: "str_replace_editor", tool_input: { command: "create", path: join(repo.dir, "src/c.ts"), file_text: "x" }, tool_use_id: "c5", tool_response: "ok", is_error: false });
     const receipts = readReceipts(SESSION);
     expect(receipts.map((r) => `${r.harness}:${r.verdict}:${r.exit}:${r.signal}`)).toEqual(["dsh:pass:0:vitest-passed", "dsh:fail:1:vitest-failed"]);
-    expect(readEdits(SESSION).map((e) => `${e.kind}:${e.path?.split("/").pop()}`)).toEqual(["edit:a.ts", "str_replace_editor:c.ts"]);
+    expect(readEdits(SESSION).map((e) => `${e.kind}:${basename(e.path ?? "")}`)).toEqual(["edit:a.ts", "str_replace_editor:c.ts"]);
   });
 
   it("denies a masked verification command only in strict mode and never rewrites", () => {
