@@ -29,6 +29,8 @@ export function makeRepo(prefix = "stalegreen-repo-"): TempRepo {
   const file = join(dir, "hold.ts");
   writeFileSync(file, "export const remaining = 1;\n");
   writeFileSync(join(dir, "README.md"), "# demo\n");
+  // CI runners can take longer than the default 150 ms budget to spawn git four times.
+  writeFileSync(join(dir, ".stalegreen.json"), JSON.stringify({ fingerprintBudgetMs: 5000 }));
   git("add", "-A");
   git("commit", "-q", "-m", "init");
   return { dir, file, cleanup: () => rmSync(dir, { recursive: true, force: true }) };

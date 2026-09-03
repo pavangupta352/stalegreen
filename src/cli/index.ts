@@ -9,6 +9,7 @@ import type { Verdict } from "../core/grammar.js";
 import { describeCounts, readReceipts, readVerdicts, runLogPath } from "../core/receipts.js";
 import { listSessions, readJsonl } from "../core/store.js";
 import { VERSION } from "../version.js";
+import { DEFAULT_HISTORY, runHistory } from "./history.js";
 import { CLAUDE_EVENTS, claudeHookStatus, installClaude, uninstallClaude } from "./install.js";
 
 const HELP = `stalegreen ${VERSION}
@@ -21,6 +22,8 @@ Usage:
   stalegreen uninstall --claude [--project]              remove them
   stalegreen check [--session <id>] [--json]             claims and evidence for the current or last session
   stalegreen receipt <id> [--session <id>]               a run's receipt and the tail of its log
+  stalegreen history [--since 30d] [--include-none] [--all-messages] [--explain] [--json] [--limit N]
+                                                         replay past sessions: stale, failed and masked claims
   stalegreen doctor                                      hooks, node, store health and the last verdicts
   stalegreen --version
   stalegreen --help
@@ -34,7 +37,7 @@ interface Args {
   flags: Map<string, string | true>;
 }
 
-const BOOLEAN_FLAGS = new Set(["json", "help", "version", "prune", "advisory", "all", "include-none", "claude", "codex", "dsh", "project", "user"]);
+const BOOLEAN_FLAGS = new Set(["json", "help", "version", "prune", "advisory", "all", "include-none", "include-fresh", "all-messages", "explain", "claude", "codex", "dsh", "project", "user"]);
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { command: null, positional: [], flags: new Map() };
@@ -214,7 +217,24 @@ function cmdInstall(args: Args, remove: boolean): number {
   }
 }
 
-export function main(argv: string[]): number {
+function cmdHistory(args: Args): Promise<number> {
+  const since = args.flags.get("since");
+  const limit = args.flags.get("limit");
+  const session = args.flags.get("session");
+  return runHistory({
+    ...DEFAULT_HISTORY,
+    since: typeof since === "string" ? since : DEFAULT_HISTORY.since,
+    includeNone: args.flags.has("include-none"),
+    includeFresh: args.flags.has("include-fresh") || args.flags.has("all"),
+    allMessages: args.flags.has("all-messages"),
+    json: args.flags.has("json"),
+    explain: args.flags.has("explain"),
+    limit: typeof limit === "string" ? Number(limit) || 0 : 0,
+    session: typeof session === "string" ? session : null,
+  });
+}
+
+export async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   if (args.flags.has("version") || args.flags.has("v")) {
     console.log(VERSION);
@@ -229,6 +249,8 @@ export function main(argv: string[]): number {
       return cmdCheck(args);
     case "receipt":
       return cmdReceipt(args);
+    case "history":
+      return cmdHistory(args);
     case "doctor":
       return cmdDoctor();
     case "install":
@@ -242,4 +264,12 @@ export function main(argv: string[]): number {
   }
 }
 
-process.exitCode = main(process.argv.slice(2));
+main(process.argv.slice(2)).then(
+  (code) => {
+    process.exitCode = code;
+  },
+  (err: unknown) => {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exitCode = 1;
+  },
+);
