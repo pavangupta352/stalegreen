@@ -90,19 +90,26 @@ function watchIn(words: string[]): boolean {
   return words.some((w) => WATCH_FLAGS.has(w) || /^--watch(All)?=/.test(w));
 }
 
-/** Positional arguments from index `from`, flags removed. */
+/** Flags whose next word is a value, not a positional argument. */
+const VALUE_FLAGS = new Set(["-p", "--project", "-c", "--config", "--configPath", "--config-path", "-f", "--file", "-o", "--out", "--outDir", "--outFile", "--out-dir", "-r", "--require", "--reporter", "--setupFile", "--setupFiles", "--dir", "--root", "--rootDir", "--tsconfig", "--env-file", "--env", "--ignore-path", "--ignore-pattern", "--rulesdir", "--resolve-plugins-relative-to", "--parser", "--ext", "--format", "--output-file", "--cache-location", "--max-warnings", "-C", "--directory", "--manifest-path", "--target-dir", "--features", "--package", "-p", "--bin", "--example", "--bench", "--lib", "--workspace", "--exclude", "--filter", "--target", "-t", "--testNamePattern", "--testPathPattern", "--testPathPatterns", "-k", "-m", "--maxfail", "--timeout", "--project", "--pool", "--poolOptions", "--coverage.provider", "--shard", "--concurrency", "--threads", "-j", "--jobs", "--retries", "--repeat", "--run-in-band", "-n", "--name", "--plain-name", "--tags", "-l", "--log-level", "--verbosity", "-v"]);
+
+/** Positional arguments from index `from`, flags and their values removed. */
 function positionals(words: string[], from: number): string[] {
   const out: string[] = [];
   for (let i = from; i < words.length; i++) {
     const w = words[i] as string;
     if (w === "--") continue;
-    if (w.startsWith("-")) continue;
+    if (w.startsWith("-")) {
+      if (VALUE_FLAGS.has(w) && !["-v", "--lib", "--workspace", "--run-in-band"].includes(w)) i++;
+      continue;
+    }
     out.push(w);
   }
   return out;
 }
 
-const FILE_EXT = /\.(py|ts|tsx|js|jsx|mjs|cjs|mts|cts|go|rs|rb|php|ex|exs|swift|kt|java|cs|vue|svelte|json|yaml|yml|toml|sh|c|cc|cpp|h|hpp|scala|dart|elm|hs)$/i;
+/** Source files whose presence on the command line narrows a run to a subset. Config files do not count. */
+const FILE_EXT = /\.(py|ts|tsx|js|jsx|mjs|cjs|mts|cts|go|rs|rb|php|ex|exs|swift|kt|java|cs|vue|svelte|sh|c|cc|cpp|h|hpp|scala|dart|elm|hs)$/i;
 
 function hasFileArgs(words: string[], from: number): boolean {
   return positionals(words, from).some((p) => FILE_EXT.test(p) || p.includes("::"));
@@ -783,6 +790,9 @@ const SIGNALS: Signal[] = [
   { id: "sbt-test-failed", category: "test", kind: "fail", re: /^\[error\] Failed: Total \d+, Failed [1-9]|^\[error\] Failed tests:/m },
   { id: "sbt-test-passed", category: "test", kind: "pass", re: /^\[info\] Passed: Total (\d+), Failed 0/m },
   { id: "generic-test-no-tests", category: "test", kind: "notrun", re: /^No tests found\b|^No test files found\b|^0 tests? (?:ran|run|executed)\b/m },
+  // Home-grown runners tend to print one of these.
+  { id: "generic-test-failed", category: "test", kind: "fail", re: /^\s*\d+ passed, [1-9]\d* failed\b|^\s*[1-9]\d* (?:tests? )?failed, \d+ passed\b|^\s*(?:Tests|Results?): \d+ passed, [1-9]\d* failed/m },
+  { id: "generic-test-passed", category: "test", kind: "pass", re: /^\s*(\d+) passed, 0 failed\b|^\s*0 failed, (\d+) passed\b|^\s*(?:Tests|Results?): (\d+) passed, 0 failed\b|^\s*All (\d+) tests? passed\b/m },
   // --- typecheck
   { id: "tsc-error", category: "typecheck", kind: "fail", re: /error TS\d{3,5}:|^Found [1-9]\d* errors?(?: in| \.)/m },
   { id: "tsc-found-zero", category: "typecheck", kind: "pass", re: /^Found 0 errors\./m },
@@ -806,6 +816,7 @@ const SIGNALS: Signal[] = [
   // --- lint
   { id: "eslint-problems", category: "lint", kind: "fail", re: /✖ [1-9]\d* problems? \([1-9]\d* errors?/m },
   { id: "eslint-config-error", category: "lint", kind: "fail", re: /^Oops! Something went wrong!|ESLint couldn't find|Error: Cannot find module/m },
+  { id: "eslint-no-files", category: "lint", kind: "notrun", re: /^No files matching the pattern|Please check for typing mistakes in the pattern\./m },
   { id: "biome-errors", category: "lint", kind: "fail", re: /^Found [1-9]\d* errors?\.\s*$|^Checked \d+ files? in [^\n]*\. Found [1-9]\d* errors?/m },
   { id: "biome-ok", category: "lint", kind: "pass", re: /^Checked (\d+) files? in [^\n]*\. No fixes (?:needed|applied)\.|^Checked (\d+) files? in [^\n]*\. Fixed \d+ files?\./m },
   { id: "ruff-found", category: "lint", kind: "fail", re: /^Found [1-9]\d* errors?\.?\s*(?:\(\d+ fixable[^)]*\))?\s*$|^Found [1-9]\d* errors? \(\d+ fixed, [1-9]\d* remaining\)/m },
@@ -845,8 +856,19 @@ const SIGNALS: Signal[] = [
   { id: "checkstyle-errors", category: "lint", kind: "fail", re: /^Checkstyle ends with [1-9]\d* errors?\./m },
   { id: "dotnet-format-diff", category: "lint", kind: "fail", re: /^\s*error WHITESPACE|^\s*error IMPORTS|Formatted code file/m },
   // --- build
-  { id: "next-failed", category: "build", kind: "fail", re: /^Failed to compile\.|^> Build failed|Build error occurred|^Type error: /m },
-  { id: "next-ok", category: "build", kind: "pass", re: /^\s*(?:✓|√) Compiled successfully|^Compiled successfully/m },
+  { id: "next-failed", category: "build", kind: "fail", re: /^Failed to compile\.|^> Build failed|Build error occurred|^Type error: |^⨯ Next\.js build worker exited with code: [1-9]|^Export encountered an error|exiting the build\.|^⨯ Failed to/m },
+  { id: "next-ok", category: "build", kind: "pass", re: /^\s*(?:✓|√) Compiled successfully|^Compiled successfully|^[○ƒ●λ◐]\s+\((?:Static|Dynamic|SSG|ISR|Partial Prerender)\)\s+(?:prerendered|server-rendered|revalidated)/m },
+  { id: "cra-ok", category: "build", kind: "pass", re: /^The build folder is ready to be deployed\./m },
+  { id: "astro-failed", category: "build", kind: "fail", re: /^(?:\d{2}:\d{2}:\d{2} )?\s*\[build\] .*(?:error|failed)|^(?:\d{2}:\d{2}:\d{2} )?\[ERROR\] |^\s*\[(?:vite|astro)\] Build failed/m },
+  { id: "astro-ok", category: "build", kind: "pass", re: /^(?:\d{2}:\d{2}:\d{2} )?\s*(?:✓|√)\s+Completed in [\d.]+ ?m?s\.|^(?:\d{2}:\d{2}:\d{2} )?\s*\[build\] Complete!|^(?:\d{2}:\d{2}:\d{2} )?\s*\[build\] Server built in/m },
+  { id: "angular-failed", category: "build", kind: "fail", re: /^(?:✘|X) \[ERROR\]/m },
+  { id: "angular-ok", category: "build", kind: "pass", re: /^Application bundle generation complete\./m },
+  { id: "docusaurus-ok", category: "build", kind: "pass", re: /^\[SUCCESS\] Generated static files in/m },
+  { id: "gatsby-ok", category: "build", kind: "pass", re: /^Done building in [\d.]+ sec/m },
+  { id: "hugo-ok", category: "build", kind: "pass", re: /^Total in \d+ ms/m },
+  { id: "eleventy-ok", category: "build", kind: "pass", re: /^\[11ty\] Wrote \d+ files? in/m },
+  { id: "nuxt-ok", category: "build", kind: "pass", re: /^\s*(?:✔|✓) (?:Nuxt Nitro server built|Client built|Server built|Generated public)/m },
+  { id: "expo-ok", category: "build", kind: "pass", re: /^Exported: \S+/m },
   { id: "vite-failed", category: "build", kind: "fail", re: /^error during build:|^\[vite\]: Rollup failed|^x Build failed/m },
   { id: "vite-ok", category: "build", kind: "pass", re: /(?:✓|√) built in [\d.]+ ?m?s/m },
   { id: "webpack-failed", category: "build", kind: "fail", re: /compiled with [1-9]\d* errors?|^ERROR in /m },
@@ -897,7 +919,14 @@ const SINGLE_LINE_SUMMARY = new Set([
   "tsc-found-zero", "svelte-check-ok", "mypy-ok", "pyright-ok", "flow-ok", "phpstan-ok", "sorbet-ok", "dialyzer-ok",
   "ruff-ok", "ruff-format-ok", "black-ok", "biome-ok", "rubocop-ok", "oxlint-ok", "prettier-ok", "golangci-ok", "credo-ok", "swiftlint-ok", "dart-analyze-ok", "pylint-ok",
   "next-ok", "vite-ok", "webpack-ok", "tsup-ok", "rollup-ok", "turbo-ok", "gradle-build-ok", "maven-build-ok", "dotnet-build-ok", "xcodebuild-ok", "swift-build-ok", "docker-ok", "elm-make-ok", "parcel-ok", "python-build-ok", "esbuild-ok", "ninja-ok",
+  "cra-ok", "astro-ok", "angular-ok", "docusaurus-ok", "gatsby-ok", "hugo-ok", "eleventy-ok", "nuxt-ok", "expo-ok", "generic-test-passed",
 ]);
+
+/** True when the output holds a fail signal for the category. */
+export function hasFailSignal(category: Category, rawOutput: string): boolean {
+  const { fail } = matchingSignals(category, cleanOutput(rawOutput ?? ""));
+  return fail.length > 0;
+}
 
 const COUNT_PATTERNS: { re: RegExp; last?: boolean; only?: Category[]; map: (m: RegExpMatchArray) => Counts }[] = [
   // pytest summary: "= 1 failed, 40 passed, 2 skipped in 3.2s ="
@@ -1007,7 +1036,7 @@ function matchingSignals(category: Category, output: string): { pass: string[]; 
 }
 
 /** Lines a package manager prints around a script: the script banner, yarn's chatter, a trailing "Done in". */
-const BANNER_LINE = /^(?:>\s.*|\$ .*|yarn run v[\d.]+|(?:✨\s+)?Done in [\d.]+m?s\.?|info Visit https:\/\/yarnpkg\.com.*|\[stalegreen\] .*|npm warn .*|npm notice .*|\s*)$/;
+const BANNER_LINE = /^(?:>\s.*|\$ .*|yarn run v[\d.]+|(?:✨\s+)?Done in [\d.]+m?s\.?|info Visit https:\/\/yarnpkg\.com.*|\[stalegreen\] .*|npm warn .*|npm notice .*|Shell cwd was reset to .*|Session cwd remains .*|\s*)$/;
 
 /** True when the output carries nothing beyond package-manager banners, so a silent-success tool printed nothing. */
 export function isSilent(output: string): boolean {
@@ -1042,6 +1071,9 @@ export function parseOutput(category: Category, rawOutput: string, opts: ParseOp
   }
   if (category === "test" && (notrun.length > 0 || NOT_RUN_ANY.test(output)) && pass.length === 0) {
     return { ...base, verdict: "inconclusive", signal: notrun[0] ?? "no-tests" };
+  }
+  if (category !== "test" && notrun.length > 0 && pass.length === 0 && fail.length === 0) {
+    return { ...base, verdict: "inconclusive", signal: notrun[0] as string };
   }
   if (opts.exit === null || opts.exit === undefined) {
     if (fail.length > 0) return { ...base, verdict: "fail", signal: fail[0] as string };
