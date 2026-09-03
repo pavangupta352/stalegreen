@@ -2,13 +2,14 @@
  * The stalegreen command line.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { stalegreenHome } from "../core/config.js";
-import type { Receipt, Verdict } from "../core/grammar.js";
+import type { Verdict } from "../core/grammar.js";
 import { describeCounts, readReceipts, readVerdicts, runLogPath } from "../core/receipts.js";
-import { listSessions, readJsonl, sessionDir } from "../core/store.js";
+import { listSessions, readJsonl } from "../core/store.js";
 import { VERSION } from "../version.js";
+import { CLAUDE_EVENTS, claudeHookStatus, installClaude, uninstallClaude } from "./install.js";
 
 const HELP = `stalegreen ${VERSION}
 
@@ -16,9 +17,11 @@ Keeps a coding agent's green claims honest: verification runs are recorded
 unmasked, and "done" is blocked when the evidence is stale, failed or masked.
 
 Usage:
-  stalegreen check [--session <id>] [--json]     claims and evidence for the current or last session
-  stalegreen receipt <id> [--session <id>]        print a run's receipt and the tail of its log
-  stalegreen doctor                               store health and the last verdicts
+  stalegreen install --claude [--project] [--advisory]   register the hooks in Claude Code settings
+  stalegreen uninstall --claude [--project]              remove them
+  stalegreen check [--session <id>] [--json]             claims and evidence for the current or last session
+  stalegreen receipt <id> [--session <id>]               a run's receipt and the tail of its log
+  stalegreen doctor                                      hooks, node, store health and the last verdicts
   stalegreen --version
   stalegreen --help
 
@@ -31,17 +34,20 @@ interface Args {
   flags: Map<string, string | true>;
 }
 
+const BOOLEAN_FLAGS = new Set(["json", "help", "version", "prune", "advisory", "all", "include-none", "claude", "codex", "dsh", "project", "user"]);
+
 function parseArgs(argv: string[]): Args {
   const args: Args = { command: null, positional: [], flags: new Map() };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i] as string;
     if (a.startsWith("--")) {
       const eq = a.indexOf("=");
-      if (eq > 0) args.flags.set(a.slice(2, eq), a.slice(eq + 1));
-      else if (argv[i + 1] && !(argv[i + 1] as string).startsWith("-") && !["json", "help", "version", "prune", "advisory", "all", "include-none"].includes(a.slice(2))) {
-        args.flags.set(a.slice(2), argv[i + 1] as string);
+      const name = eq > 0 ? a.slice(2, eq) : a.slice(2);
+      if (eq > 0) args.flags.set(name, a.slice(eq + 1));
+      else if (!BOOLEAN_FLAGS.has(name) && argv[i + 1] && !(argv[i + 1] as string).startsWith("-")) {
+        args.flags.set(name, argv[i + 1] as string);
         i++;
-      } else args.flags.set(a.slice(2), true);
+      } else args.flags.set(name, true);
     } else if (a.startsWith("-") && a.length === 2) {
       args.flags.set(a.slice(1), true);
     } else if (args.command === null) args.command = a;
@@ -90,7 +96,8 @@ function cmdCheck(args: Args): number {
   console.log("");
   console.log(`Receipts (${receipts.length}):`);
   for (const r of receipts.slice(-20)) {
-    console.log(`  ${pad(r.id, 7)} ${clock(r.ts)} ${pad(r.category, 10)} ${pad(r.verdict, 13)} ${pad(r.scope, 7)} ${r.masked ? "masked " : r.wrapped ? "wrapped" : "plain  "} \`${r.cmd}\`${describeCounts(r.counts) ? `  ${describeCounts(r.counts)}` : ""}`);
+    const how = r.masked ? "masked " : r.wrapped ? "wrapped" : "plain  ";
+    console.log(`  ${pad(r.id, 7)} ${clock(r.ts)} ${pad(r.category, 10)} ${pad(r.verdict, 13)} ${pad(r.scope, 7)} ${how} \`${r.cmd}\`${describeCounts(r.counts) ? `  ${describeCounts(r.counts)}` : ""}`);
   }
   if (receipts.length === 0) console.log("  none");
   console.log("");
@@ -124,19 +131,36 @@ function cmdReceipt(args: Args): number {
   const log = receipt.log ?? runLogPath(root, id);
   if (existsSync(log)) {
     const lines = readFileSync(log, "utf8").split("\n");
-    const tail = lines.slice(-40);
     console.log("");
     console.log(`Log tail (${log}):`);
-    for (const l of tail) console.log(`  ${l}`);
+    for (const l of lines.slice(-40)) console.log(`  ${l}`);
   }
   return 0;
 }
 
 function cmdDoctor(): number {
   const home = stalegreenHome();
+  let problems = 0;
   console.log(`stalegreen ${VERSION}`);
-  console.log(`node ${process.version}`);
+  console.log(`node ${process.version}${Number(process.versions.node.split(".")[0]) >= 20 ? "" : "  (needs 20 or newer)"}`);
   console.log(`store ${home}${existsSync(home) ? "" : " (not created yet)"}`);
+  for (const scope of ["user", "project"] as const) {
+    const s = claudeHookStatus(scope, process.cwd());
+    const present = CLAUDE_EVENTS.filter((e) => s.events[e.event]).map((e) => e.event);
+    if (present.length === 0) {
+      console.log(`claude ${scope} hooks: not installed (${s.settingsFile})`);
+      continue;
+    }
+    const missing = CLAUDE_EVENTS.filter((e) => !s.events[e.event]).map((e) => e.event);
+    console.log(`claude ${scope} hooks: ${present.join(", ")}${missing.length ? `  missing: ${missing.join(", ")}` : ""} (${s.settingsFile})`);
+    if (missing.length) problems++;
+    if (!s.hookExists) {
+      console.log(`  hook file missing: ${s.hookPath ?? "?"}  (run \`stalegreen install --claude\`)`);
+      problems++;
+    } else if (s.installedVersion && s.installedVersion !== VERSION) {
+      console.log(`  hook file is version ${s.installedVersion}, CLI is ${VERSION}  (run \`stalegreen install --claude\` to update)`);
+    }
+  }
   const errors = readJsonl<{ ts: string; event: string; error: string }>(join(home, "errors.jsonl"));
   console.log(`hook errors recorded: ${errors.length}`);
   for (const e of errors.slice(-3)) console.log(`  ${e.ts} ${e.event}: ${e.error}`);
@@ -149,7 +173,45 @@ function cmdDoctor(): number {
     console.log(`latest session ${latest.root}: ${receipts.length} receipts, ${verdicts.length} stop verdicts`);
     for (const rec of verdicts.slice(-5)) for (const v of rec.verdicts) console.log(`  ${clock(rec.ts)} ${formatVerdict(v)}`);
   }
-  return 0;
+  return problems > 0 ? 1 : 0;
+}
+
+function cmdInstall(args: Args, remove: boolean): number {
+  if (!args.flags.has("claude")) {
+    console.error(`usage: stalegreen ${remove ? "uninstall" : "install"} --claude [--project] [--advisory]`);
+    console.error("Codex and DeepSeek Harness support are on the way; see the changelog.");
+    return 2;
+  }
+  const scope = args.flags.has("project") ? "project" : "user";
+  try {
+    if (remove) {
+      const r = uninstallClaude({ scope, cwd: process.cwd() });
+      console.log(r.removed > 0 ? `Removed ${r.removed} stalegreen hook entries from ${r.settingsFile}` : `No stalegreen hooks in ${r.settingsFile}`);
+      return 0;
+    }
+    const r = installClaude({ scope, cwd: process.cwd() });
+    if (args.flags.has("advisory")) {
+      const file = join(stalegreenHome(), "config.json");
+      let cfg: Record<string, unknown> = {};
+      try {
+        if (existsSync(file)) cfg = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+      } catch {
+        cfg = {};
+      }
+      cfg.policy = "advisory";
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, JSON.stringify(cfg, null, 2) + "\n");
+      console.log(`Policy set to advisory in ${file} (verdicts are recorded, nothing is blocked).`);
+    }
+    console.log(`Hook installed at ${r.hookPath}`);
+    console.log(`Registered PreToolUse, PostToolUse, Stop and SubagentStop in ${r.settingsFile}${r.replaced ? ` (replaced ${r.replaced} older entries)` : ""}`);
+    console.log("New Claude Code sessions pick this up automatically; a running session reloads hooks when its settings change.");
+    console.log("Run `stalegreen doctor` to confirm, and `stalegreen check` after your next verification run.");
+    return 0;
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    return 1;
+  }
 }
 
 export function main(argv: string[]): number {
@@ -169,6 +231,10 @@ export function main(argv: string[]): number {
       return cmdReceipt(args);
     case "doctor":
       return cmdDoctor();
+    case "install":
+      return cmdInstall(args, false);
+    case "uninstall":
+      return cmdInstall(args, true);
     default:
       console.error(`Unknown command: ${args.command}`);
       process.stdout.write(HELP);
