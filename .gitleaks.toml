@@ -1,0 +1,10 @@
+# gitleaks configuration. The default rules apply; the allowlist below covers
+# one historical commit whose test file carried a made-up bearer header that
+# matched the curl-auth-header rule. The test now uses a value the rule does
+# not match.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Made-up example header in a redaction test, commit 7bf4862"
+commits = ["7bf48623ffca7019ee35384ecafcbb11615ba85c"]

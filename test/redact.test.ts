@@ -24,7 +24,7 @@ afterEach(() => {
 describe("redactSecrets", () => {
   it("masks secret-looking environment values, token flags, bearer headers, URL credentials and known token shapes", () => {
     expect(redactSecrets('NEXTAUTH_SECRET="abc def" DATABASE_URL=postgres://u:p@h/db NODE_ENV=test pnpm test')).toBe("NEXTAUTH_SECRET=<redacted> DATABASE_URL=postgres://<redacted>@h/db NODE_ENV=test pnpm test");
-    expect(redactSecrets("curl --token abc123 -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.x' https://x")).toBe("curl --token <redacted> -H 'Authorization: Bearer <redacted>' https://x");
+    expect(redactSecrets("fetch --token abc123 -H 'Authorization: Bearer example.header.value' https://x")).toBe("fetch --token <redacted> -H 'Authorization: Bearer <redacted>' https://x");
     expect(redactSecrets("ghp_abcdefghijklmnop1234 and sk-live-abcdefghijk")).toBe("<redacted> and <redacted>");
     expect(redactSecrets("commit 3f2a9c1e4b7d8e6f0a1b2c3d4e5f60718293a4b5 stays")).toBe("commit 3f2a9c1e4b7d8e6f0a1b2c3d4e5f60718293a4b5 stays");
     expect(redactSecrets("Tests  41 passed (41)")).toBe("Tests  41 passed (41)");
