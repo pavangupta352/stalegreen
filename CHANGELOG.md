@@ -41,6 +41,13 @@ Keep a Changelog, and the project uses semantic versioning.
   commands out of Codex's JavaScript exec cells.
 - The hook handlers are shared across harnesses through a small adapter
   (turn id, shell output shape, edit tools, allow decision, block format).
+- Claude Code plugin packaging: `plugin/` holds the manifest, the hook
+  registration (`${CLAUDE_PLUGIN_ROOT}/hook.js`) and a copy of the compiled
+  hook that `npm run build` refreshes and a test keeps identical to the
+  build; `.claude-plugin/marketplace.json` at the repository root serves it
+  through `/plugin marketplace add pavangupta352/stalegreen`. The plugin
+  lives in its own directory so that installing it never triggers a
+  dependency install.
 - The unmask rewrite: the PreToolUse hook wraps verification commands in
   POSIX sh so the full output is logged, the tail is shown, an explicit
   `[stalegreen] exit=<code> receipt=<id>` marker is printed and the exit

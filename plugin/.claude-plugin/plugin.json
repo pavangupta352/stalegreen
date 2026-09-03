@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "stalegreen",
+  "displayName": "stalegreen",
+  "version": "0.1.0",
+  "description": "Keeps a coding agent's green claims honest: verification runs are recorded unmasked, and \"done\" is blocked when the evidence is stale, failed or masked. Zero tokens, zero network, zero telemetry.",
+  "author": {
+    "name": "Pavan Gupta",
+    "email": "pavan.gupta.352@gmail.com",
+    "url": "https://github.com/pavangupta352"
+  },
+  "homepage": "https://github.com/pavangupta352/stalegreen",
+  "repository": "https://github.com/pavangupta352/stalegreen",
+  "license": "MIT",
+  "keywords": ["verification", "tests", "hooks", "evidence", "typecheck", "lint", "build", "freshness"]
+}

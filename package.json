@@ -36,9 +36,7 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE",
-    ".claude-plugin",
-    "hooks"
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
@@ -47,7 +45,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsup",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsup && node -e \"require('node:fs').copyFileSync('dist/hook.js','plugin/hook.js')\"",
     "test": "vitest run --exclude test/perf.test.ts && vitest run test/perf.test.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

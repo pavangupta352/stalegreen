@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "stalegreen",
+  "owner": {
+    "name": "Pavan Gupta",
+    "email": "pavan.gupta.352@gmail.com",
+    "url": "https://github.com/pavangupta352"
+  },
+  "metadata": {
+    "description": "stalegreen: evidence hygiene hooks for coding agents",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "stalegreen",
+      "description": "Keeps a coding agent's green claims honest: verification runs are recorded unmasked, and \"done\" is blocked when the evidence is stale, failed or masked. Zero tokens, zero network, zero telemetry.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Pavan Gupta",
+        "email": "pavan.gupta.352@gmail.com"
+      },
+      "homepage": "https://github.com/pavangupta352/stalegreen",
+      "repository": "https://github.com/pavangupta352/stalegreen",
+      "license": "MIT",
+      "keywords": [
+        "verification",
+        "tests",
+        "hooks",
+        "evidence"
+      ],
+      "category": "testing",
+      "source": "./plugin"
+    }
+  ]
+}

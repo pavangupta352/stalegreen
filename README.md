@@ -47,7 +47,16 @@ The same category is blocked at most once per turn. A second stop is allowed and
 
 ## Install
 
-Until the first npm release, build from source and register the hooks:
+As a Claude Code plugin, from inside Claude Code:
+
+```
+/plugin marketplace add pavangupta352/stalegreen
+/plugin install stalegreen@stalegreen
+```
+
+That registers PreToolUse, PostToolUse, Stop and SubagentStop from the plugin's own copy of the hook. Nothing is downloaded beyond the repository and nothing runs at install time; the hook has no dependencies.
+
+Or with the CLI, for Claude Code, Codex or both. Until the first npm release, build from source:
 
 ```sh
 git clone https://github.com/pavangupta352/stalegreen
@@ -56,7 +65,7 @@ node dist/cli.js install --claude     # or --codex, or --all
 node dist/cli.js doctor
 ```
 
-`install` copies the compiled hook to `~/.stalegreen/bin/hook.js` and registers PreToolUse, PostToolUse, Stop and SubagentStop: for Claude Code in `~/.claude/settings.json`, for Codex in `~/.codex/hooks.json`. Add `--project` for the repository's `.claude/settings.json` or `.codex/hooks.json`, `--advisory` to record verdicts without blocking. `uninstall` removes them. The plugin manifests for `/plugin marketplace add` are next; see the changelog.
+`install` copies the compiled hook to `~/.stalegreen/bin/hook.js` and registers the same four events: for Claude Code in `~/.claude/settings.json`, for Codex in `~/.codex/hooks.json`. Add `--project` for the repository's `.claude/settings.json` or `.codex/hooks.json`, `--advisory` to record verdicts without blocking. `uninstall` removes them. Use one of the two routes for Claude Code, not both, or every run is recorded twice.
 
 **Claude Code.** Permissions stay yours: the hook returns an `allow` decision for a wrapped command only when your own permission rules already allow the original one, so it never widens what Claude Code may run. Set `"permission": "allow"` in the config to skip prompts for every verification run, or `"ask"` to never return a decision.
 
