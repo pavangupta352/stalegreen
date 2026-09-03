@@ -69,6 +69,14 @@ node dist/cli.js doctor
 
 `install` copies the compiled hook to `~/.stalegreen/bin/hook.js` and registers the same four events: for Claude Code in `~/.claude/settings.json`, for Codex in `~/.codex/hooks.json`. Add `--project` for the repository's `.claude/settings.json` or `.codex/hooks.json`, `--advisory` to record verdicts without blocking. `uninstall` removes them. Use one of the two routes for Claude Code, not both, or every run is recorded twice.
 
+For DeepSeek Harness there is a native Cordis plugin, [dsh-plugin-stalegreen](dsh-plugin-stalegreen/README.md):
+
+```sh
+dsh plugin add dsh-plugin-stalegreen
+```
+
+It listens on `tools/pre-execute`, `tools/post-execute` and `agent/turn-stopping`, writes the same receipts to the same store, and steers one correction step instead of blocking. The harness cannot rewrite a tool call, so masked runs are only denied there (in strict mode), never unmasked.
+
 **Claude Code.** Permissions stay yours: the hook returns an `allow` decision for a wrapped command only when your own permission rules already allow the original one, so it never widens what Claude Code may run. Set `"permission": "allow"` in the config to skip prompts for every verification run, or `"ask"` to never return a decision.
 
 **Codex.** Codex reviews new hooks once: open Codex, run `/hooks` and trust the stalegreen entries (`codex exec` takes `--dangerously-bypass-hook-trust` instead). Codex accepts a rewritten command only together with an `allow` decision, so the decision is returned for the verification command itself and never for anything else; set `"permission": "ask"` to turn the rewrite off there. Codex hooks report no exit status for a shell command at all, which makes the rewrite the only way to know how a run ended; without it the runner's own summary line still decides, and a `Script failed` header counts as a failure. A block at Stop is returned as `{"decision":"block","reason":...}`, which Codex turns into a continuation prompt.

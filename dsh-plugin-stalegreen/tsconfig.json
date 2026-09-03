@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "baseUrl": "..",
+    "paths": {
+      "stalegreen": [
+        "src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

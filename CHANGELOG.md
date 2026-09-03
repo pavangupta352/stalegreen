@@ -41,6 +41,12 @@ Keep a Changelog, and the project uses semantic versioning.
   commands out of Codex's JavaScript exec cells.
 - The hook handlers are shared across harnesses through a small adapter
   (turn id, shell output shape, edit tools, allow decision, block format).
+- DeepSeek Harness support: a `dsh` adapter (`runDshHook`) that reads the
+  bash tool's `[exit code: N]` marker and the `edit`, `write` and
+  `str_replace_editor` tools, and `dsh-plugin-stalegreen`, a Cordis plugin
+  package in this repository that mounts the gate on `tools/pre-execute`,
+  `tools/post-execute` and `agent/turn-stopping` and steers one correction
+  step when a claim is stale, failed or masked.
 - `stalegreen redact`: a shareable copy of a session (receipts, edits,
   verdicts, pending and deferred runs, the tail of each log) with paths
   shortened, secrets masked and the agent's prose replaced by the matched

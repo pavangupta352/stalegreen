@@ -50,7 +50,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm test",
-    "test:perf": "vitest run test/perf.test.ts"
+    "test:perf": "vitest run test/perf.test.ts",
+    "build:dsh": "cd dsh-plugin-stalegreen && tsup"
   },
   "devDependencies": {
     "@types/node": "^22.7.0",

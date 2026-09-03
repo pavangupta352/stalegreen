@@ -1,0 +1,65 @@
+{
+  "name": "dsh-plugin-stalegreen",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness plugin that keeps the agent's green claims honest: verification runs become receipts, edits are tracked, and a stale, failed or masked \"all tests pass\" is turned into a rerun instead of an ending.",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "verification",
+    "tests",
+    "evidence",
+    "stalegreen"
+  ],
+  "author": "Pavan Gupta <pavan.gupta.352@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pavangupta352/stalegreen.git",
+    "directory": "dsh-plugin-stalegreen"
+  },
+  "homepage": "https://github.com/pavangupta352/stalegreen/tree/main/dsh-plugin-stalegreen#readme",
+  "bugs": {
+    "url": "https://github.com/pavangupta352/stalegreen/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "stalegreen": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4",
+    "@deepseek-ai/dsh-llm": "*"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-llm": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tsup"
+  }
+}

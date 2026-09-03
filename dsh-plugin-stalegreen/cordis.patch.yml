@@ -1,0 +1,7 @@
+# Layer applied when a profile lists this bundle (dsh plugin add dsh-plugin-stalegreen).
+# Options (all optional):
+#   policy: block | advisory     record verdicts without steering when advisory
+#   mode: strict | off           strict denies masked verification commands
+- insert:
+    - id: stalegreen
+      name: dsh-plugin-stalegreen
