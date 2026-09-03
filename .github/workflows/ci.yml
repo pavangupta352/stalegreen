@@ -21,6 +21,20 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+  # The engine is pure logic and must behave the same on Windows; the tests that
+  # drive real POSIX shells (rewrite, gate, fingerprint, timing) stay on the
+  # Unix matrix above.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx vitest run test/shell.test.ts test/runners.test.ts test/claims.test.ts test/masking.test.ts test/edits.test.ts test/permissions.test.ts test/transcript.test.ts test/codex-transcript.test.ts test/codex-hooks.test.ts test/dsh.test.ts test/stats.test.ts test/redact.test.ts test/plugin.test.ts test/process.test.ts test/cli.test.ts
   package:
     runs-on: ubuntu-latest
     steps:
