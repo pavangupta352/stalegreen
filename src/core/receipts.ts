@@ -32,6 +32,11 @@ export interface PendingRun {
 }
 
 export interface DeferredRun {
+  /** The full command and the directory it ran in, so a later wait can finish the receipt. */
+  command?: string;
+  cwd?: string;
+  /** The harness's handle for the still-running command. */
+  cellId?: string;
   id: string;
   ts: string;
   category: Category;
@@ -56,7 +61,11 @@ export interface RunInput {
   stdout: string;
   stderr: string;
   exit: number | null;
+  /** The harness reported a failure without a number (Codex says "Script failed"). */
+  exitFailed?: boolean;
   interrupted: boolean;
+  /** The output arrived later, from a wait or task-output tool. */
+  background?: boolean;
   cwd: string;
   toolUseId?: string | null;
 }
@@ -272,7 +281,7 @@ export function recoverExitFromEcho(parsed: ParsedCommand, pipelineEnd: number, 
     if (plain && !pipeStatus && hasPipe) return null;
     // Rebuild the printed line from the echo's literal text.
     const text = seg.words.slice(1).filter((w) => !(w0 === "echo" && /^-[neE]+$/.test(w))).join(" ");
-    const escaped = text.replace(/\$\{?PIPESTATUS\[0\]\}?|\$pipestatus\[1\]|\$\?/gi, " ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "(-?\\d+)");
+    const escaped = text.replace(/\$\{?PIPESTATUS\[0\]\}?|\$pipestatus\[1\]|\$\?/gi, "\0").replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\0/g, "(-?\\d+)");
     if (!escaped.includes("(-?\\d+)")) continue;
     const m = new RegExp(`^${escaped.replace(/\\\\n/g, "")}\\s*$`, "m").exec(output);
     if (m) return Number(m[1]);
@@ -396,6 +405,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
     fingerprint: { head: null, tree: null, available: false, reason: "not-computed" },
     log: null,
     ...(input.toolUseId ? { toolUseId: input.toolUseId } : {}),
+    ...(input.background ? { background: true } : {}),
     ...extra,
   });
 
@@ -443,7 +453,8 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
   const parsedCommand = parseCommand(input.command);
   const detections = detectRuns(input.command, ctx.config, parsedCommand).filter((d) => d.notRun === null);
   if (detections.length === 0) return [];
-  const exitKnown = input.exit !== null && input.exit !== undefined;
+  const exitKnown = (input.exit !== null && input.exit !== undefined) || input.exitFailed === true;
+  const failedExit = input.exitFailed === true && (input.exit === null || input.exit === undefined);
   const analyses = detections.map((d) => maskingFor(parsedCommand, d));
   const chunks = attributeOutput(parsedCommand, detections, combined);
   const preliminary = detections.map((d) => parseOutput(d.category, chunks.get(d.segmentIndex) ?? combined, { exit: null, interrupted: input.interrupted }));
@@ -455,12 +466,14 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
     let output = stripStatusEchoLines(chunks.get(d.segmentIndex) ?? combined, parsedCommand, analysis.pipelineEnd);
     let exit: number | null = null;
     let signalNote: string | null = null;
+    let failedNoNumber = false;
     if (exitKnown && analysis.exitPreserved) {
       if (input.exit === 0) exit = 0;
-      else if (detections.length === 1) exit = input.exit;
-      else if ((preliminary[i] as { verdict: RunVerdict }).verdict === "fail") exit = input.exit;
-      else if (!anyFail && i === detections.length - 1) exit = input.exit;
+      else if (detections.length === 1) exit = failedExit ? null : input.exit;
+      else if ((preliminary[i] as { verdict: RunVerdict }).verdict === "fail") exit = failedExit ? null : input.exit;
+      else if (!anyFail && i === detections.length - 1) exit = failedExit ? null : input.exit;
       else signalNote = "compound-exit-unattributed";
+      failedNoNumber = failedExit && signalNote === null && exit === null;
     }
     let recovered: number | null = null;
     if (exit === null && !d.nested) {
@@ -488,8 +501,8 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
     const shortTail = analysis.tailLines !== null && analysis.tailLines < 3 && !complete;
     const outputVisible = readBack || complete || (analysis.outputVisible && !shortTail);
     const filtered = (analysis.filtered || shortTail) && !complete && !readBack;
-    const parsed = parseOutput(d.category, output, { exit, interrupted: input.interrupted, outputVisible, filtered });
-    const extra = extraVerdict(ctx.config, d.runner, output, exit);
+    const parsed = parseOutput(d.category, output, { exit, interrupted: input.interrupted, outputVisible, filtered, ...(failedNoNumber ? { failed: true } : {}) });
+    const extra = extraVerdict(ctx.config, d.runner, output, failedNoNumber ? 1 : exit);
     let verdict = extra?.verdict ?? parsed.verdict;
     let signal = extra?.signal ?? parsed.signal;
     const errorSearch = analysis.filterPatterns.length > 0 ? analysis.filterPatterns.every((p) => !p.startsWith("!") && ERROR_PATTERN_RE.test(p)) : analysis.countOnly && d.category !== "build";

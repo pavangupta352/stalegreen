@@ -41,5 +41,12 @@ export type { BuiltReceipt, DeferredRun, PendingRun, ReceiptContext, RunInput, V
 export { deriveSession, listSessions, sessionDir } from "./core/store.js";
 export type { SessionRef } from "./core/store.js";
 export { runClaudeHook } from "./harness/claude/hooks.js";
-export type { HookOutcome } from "./harness/claude/hooks.js";
+export { runCodexHook } from "./harness/codex/hooks.js";
+export { applyPatchEdits, exitFromCellOutput, extractExecCommands, parseCodexExecOutput } from "./harness/codex/output.js";
+export type { CodexExecOutput, CodexRunState } from "./harness/codex/output.js";
+export { runHook } from "./harness/hooks.js";
+export type { HarnessAdapter, HookOutcome, ShellRun } from "./harness/hooks.js";
+export { replayClaudeSession, claudeTranscriptFiles } from "./harness/claude/transcript.js";
+export { replayCodexSession, readCodexEvents, codexTranscriptFiles, codexSessionGroups } from "./harness/codex/transcript.js";
+export type { ReplayOptions, ReplayVerdict, RunStats, SessionReplay } from "./harness/replay.js";
 export { VERSION } from "./version.js";

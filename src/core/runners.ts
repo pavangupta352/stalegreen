@@ -50,6 +50,8 @@ export interface ParseResult {
 
 export interface ParseOptions {
   exit: number | null;
+  /** The exit status is known to be non-zero but the number is not (Codex reports "Script failed"). */
+  failed?: boolean;
   interrupted?: boolean;
   /**
    * When the exit status is unknown but the end of the output is fully
@@ -1068,6 +1070,9 @@ export function parseOutput(category: Category, rawOutput: string, opts: ParseOp
   if (opts.interrupted) return { ...base, verdict: "inconclusive", signal: "interrupted" };
   if (opts.exit !== null && opts.exit !== undefined && opts.exit !== 0) {
     return { ...base, verdict: "fail", signal: fail[0] ?? `exit-${opts.exit}` };
+  }
+  if (opts.failed && (opts.exit === null || opts.exit === undefined)) {
+    return { ...base, verdict: "fail", signal: fail[0] ?? "exit-nonzero" };
   }
   if (category === "test" && (notrun.length > 0 || NOT_RUN_ANY.test(output)) && pass.length === 0) {
     return { ...base, verdict: "inconclusive", signal: notrun[0] ?? "no-tests" };

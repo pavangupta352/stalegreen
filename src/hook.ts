@@ -7,6 +7,7 @@ import { writeSync } from "node:fs";
 import * as nodeModule from "node:module";
 import { recordError } from "./core/store.js";
 import { runClaudeHook, type HookOutcome } from "./harness/claude/hooks.js";
+import { runCodexHook } from "./harness/codex/hooks.js";
 
 // Node 22.1 and later can cache compiled code between runs, which trims the cold start.
 try {
@@ -61,6 +62,7 @@ async function main(): Promise<void> {
   if (payload === null) emit({ exit: 0 });
   try {
     if (harness === "claude") emit(runClaudeHook(event, payload));
+    if (harness === "codex") emit(runCodexHook(event, payload));
     emit({ exit: 0 });
   } catch (err) {
     recordError(`${harness}:${event}`, err);
