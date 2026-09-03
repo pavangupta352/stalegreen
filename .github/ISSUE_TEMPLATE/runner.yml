@@ -1,0 +1,25 @@
+name: Runner or claim form
+description: A test, typecheck, lint or build tool that is not recognised, or a green claim the grammar misses or misreads.
+title: "Runner: "
+labels: ["runner"]
+body:
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      placeholder: "mix test --cover"
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Summary output
+      description: The last lines the tool prints on a pass and on a fail. Synthetic or anonymised, please; it becomes a fixture.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: Claim sentence (if this is about the grammar)
+      description: The sentence the agent wrote and whether it should count as an assertive claim.

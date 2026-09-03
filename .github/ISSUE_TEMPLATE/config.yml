@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/pavangupta352/stalegreen/discussions
+    about: Ask how a verdict was reached, or propose a runner, a claim form or a harness.

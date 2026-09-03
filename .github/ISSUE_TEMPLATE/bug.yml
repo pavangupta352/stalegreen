@@ -1,0 +1,22 @@
+name: Bug
+description: Anything else that misbehaves.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Commands, hook payload (synthetic is fine), config.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      placeholder: stalegreen 0.1.0, node v22.x, macOS 15
