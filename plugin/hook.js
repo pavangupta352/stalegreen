@@ -2171,9 +2171,12 @@ function refusalReason(parsed, detection) {
   if (seg.negated) return "negated";
   return null;
 }
+function shellPath(p) {
+  return process.platform === "win32" ? p.replace(/\\/g, "/") : p;
+}
 function wrapper(head, id, log, tailLines, tee) {
-  const q = shQuote(log);
-  const dir = shQuote(dirname3(log));
+  const q = shQuote(shellPath(log));
+  const dir = shQuote(shellPath(dirname3(log)));
   const parts = [];
   parts.push(`__sg_log=${q}`);
   parts.push(`mkdir -p ${dir}`);

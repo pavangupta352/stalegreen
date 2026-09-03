@@ -20,7 +20,8 @@ Keep a Changelog, and the project uses semantic versioning.
 - Freshness gate for Claude Code (Stop and SubagentStop) that blocks a green
   claim when its evidence is stale, failed or masked, with a loop guard so a
   claim is blocked at most once per turn.
-- `stalegreen check`, `stalegreen receipt` and `stalegreen doctor`.
+- `stalegreen check`, `stalegreen receipt` and `stalegreen doctor`, with
+  `doctor --prune` removing sessions older than the configured window.
 - `stalegreen history`: replays past Claude Code sessions (main transcript
   and subagents, streamed) through the receipt builder and the gate and lists
   the claims whose evidence was stale, failed or masked, with `--explain` for

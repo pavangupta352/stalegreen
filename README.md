@@ -145,6 +145,10 @@ The extractor is tested against a labelled corpus of 350 sentences and must stay
   "ignoreCommands": ["make lint-fast"],
   "extraRunners": [{ "match": "^make check", "category": "test", "pass": "^OK", "fail": "FAILED" }],
   "fingerprintIgnore": ["*.md", "docs/**"],
+  "fingerprintBudgetMs": 150,
+  "deferredTtlMinutes": 10,
+  "maxLogBytes": 5242880,
+  "permission": "inherit",
   "prune": "30d"
 }
 ```
@@ -152,6 +156,13 @@ The extractor is tested against a labelled corpus of 350 sentences and must stay
 - `policy`: `block` (default) or `advisory`, which records verdicts without blocking.
 - `mode`: `rewrite` (default), `strict` (masked commands that cannot be wrapped are denied with a rerun instruction) or `off` (no rewriting).
 - `strictNoEvidence`: block claims that have no run at all.
+- `tailLines`: how many lines of a wrapped run the agent sees; the agent's own `tail -n` is kept when it asks for at least 20.
+- `categories`, `ignoreCommands`, `extraRunners`: which categories are gated, commands never treated as runs, and your own runners (`match` is a regular expression on the command, `pass` and `fail` on the output).
+- `fingerprintIgnore`, `fingerprintBudgetMs`: paths left out of the working-tree hash, and the time after which the hash is marked unavailable and edit events decide.
+- `deferredTtlMinutes`: how long a background run counts as in flight.
+- `maxLogBytes`: logs above this size are truncated with a marker.
+- `permission`: `inherit` (default, an allow decision only when your own rules already allow the command), `allow` (every verification run) or `ask` (never a decision; on Codex this turns the rewrite off).
+- `prune`: the window `stalegreen doctor --prune` keeps; older sessions are removed from the store.
 
 ## Output grammar
 
@@ -198,7 +209,7 @@ Every verdict behind those numbers was reviewed by hand. The stale ones are real
 ```
 stalegreen check [--session <id>] [--json]   claims and evidence for the current or last session
 stalegreen receipt <id>                      a run's receipt and the tail of its log
-stalegreen doctor                            hooks, store health and the last verdicts
+stalegreen doctor [--prune]                  hooks, store health and the last verdicts; prune old sessions
 stalegreen history [--since 30d] [--include-none] [--explain] [--json]
                                              replay past sessions: stale, failed and masked claims
 stalegreen stats [--since 90d] [--json]      the rates above, per harness, model and session kind

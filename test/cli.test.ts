@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -151,6 +151,22 @@ describe("dist/cli.js", () => {
     expect(cli(["doctor"]).stdout).toContain("codex user hooks: not installed");
     expect(cli(["install", "--all"]).stdout).toContain("Codex asks you to review");
     expect(cli(["uninstall", "--all"]).status).toBe(0);
+  });
+
+  it("prunes sessions older than the configured window but never the newest one", () => {
+    const sessions = join(home, "sessions");
+    const old = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000);
+    for (const [name, age] of [["old-session", old], ["older-session", old], ["fresh-session", new Date()]] as const) {
+      mkdirSync(join(sessions, name), { recursive: true });
+      writeFileSync(join(sessions, name, "receipts.jsonl"), "");
+      utimesSync(join(sessions, name, "receipts.jsonl"), age, age);
+      utimesSync(join(sessions, name), age, age);
+    }
+    const r = cli(["doctor", "--prune"]);
+    expect(r.stdout).toContain("pruned 2 sessions older than 30d, 1 kept");
+    expect(existsSync(join(sessions, "fresh-session"))).toBe(true);
+    expect(existsSync(join(sessions, "old-session"))).toBe(false);
+    expect(cli(["doctor", "--prune"]).stdout).toContain("pruned 0 sessions");
   });
 
   it("refuses install without a harness flag and reports a missing hook file", () => {

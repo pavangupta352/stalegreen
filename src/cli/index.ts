@@ -4,10 +4,10 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { stalegreenHome } from "../core/config.js";
+import { loadConfig, parseDuration, stalegreenHome } from "../core/config.js";
 import type { Verdict } from "../core/grammar.js";
 import { describeCounts, readReceipts, readVerdicts, runLogPath } from "../core/receipts.js";
-import { listSessions, readJsonl } from "../core/store.js";
+import { listSessions, pruneSessions, readJsonl } from "../core/store.js";
 import { VERSION } from "../version.js";
 import { DEFAULT_HISTORY, runHistory } from "./history.js";
 import { redactSession } from "./redact.js";
@@ -33,7 +33,8 @@ Usage:
                                                          hidden-exit rate of verification runs, per harness and model
   stalegreen redact [--session <id>] [--out <file>] [--no-logs]
                                                          a shareable copy of a session for bug reports
-  stalegreen doctor                                      hooks, node, store health and the last verdicts
+  stalegreen doctor [--prune]                            hooks, node, store health and the last verdicts;
+                                                         --prune removes sessions older than the config's prune window
   stalegreen --version
   stalegreen --help
 
@@ -168,9 +169,15 @@ function cmdRedact(args: Args): number {
   return 0;
 }
 
-function cmdDoctor(): number {
+function cmdDoctor(args: Args): number {
   const home = stalegreenHome();
   let problems = 0;
+  if (args.flags.has("prune")) {
+    const window = loadConfig(process.cwd()).prune;
+    const ms = parseDuration(window) ?? 30 * 24 * 60 * 60 * 1000;
+    const result = pruneSessions(ms);
+    console.log(`pruned ${result.removed.length} session${result.removed.length === 1 ? "" : "s"} older than ${window}, ${result.kept} kept`);
+  }
   console.log(`stalegreen ${VERSION}`);
   console.log(`node ${process.version}${Number(process.versions.node.split(".")[0]) >= 20 ? "" : "  (needs 20 or newer)"}`);
   console.log(`store ${home}${existsSync(home) ? "" : " (not created yet)"}`);
@@ -318,7 +325,7 @@ export async function main(argv: string[]): Promise<number> {
     case "stats":
       return cmdStats(args);
     case "doctor":
-      return cmdDoctor();
+      return cmdDoctor(args);
     case "redact":
       return cmdRedact(args);
     case "install":

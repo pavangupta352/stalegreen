@@ -189,3 +189,23 @@ export function listSessions(): { root: string; dir: string; mtime: number }[] {
   }
   return out.sort((a, b) => b.mtime - a.mtime);
 }
+
+/** Removes session directories whose newest record is older than `olderThanMs`. Never touches the newest session. */
+export function pruneSessions(olderThanMs: number, now = Date.now()): { removed: string[]; kept: number } {
+  const sessions = listSessions().sort((a, b) => b.mtime - a.mtime);
+  const removed: string[] = [];
+  let kept = 0;
+  sessions.forEach((s, i) => {
+    if (i === 0 || now - s.mtime < olderThanMs) {
+      kept++;
+      return;
+    }
+    try {
+      rmSync(s.dir, { recursive: true, force: true });
+      removed.push(s.root);
+    } catch {
+      kept++;
+    }
+  });
+  return { removed, kept };
+}
