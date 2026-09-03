@@ -1,0 +1,8 @@
+[info] HoldSpec:
+[info] - should expire after ttl
+[info] Run completed in 412 milliseconds.
+[info] Total number of tests run: 9
+[info] Tests: succeeded 9, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[info] Passed: Total 9, Failed 0, Errors 0, Passed 9
+[success] Total time: 3 s

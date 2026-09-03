@@ -1,0 +1,5 @@
+holds/hold.go:41:2: ineffectual assignment to remaining (ineffassign)
+	remaining := 1
+	^
+1 issues:
+* ineffassign: 1

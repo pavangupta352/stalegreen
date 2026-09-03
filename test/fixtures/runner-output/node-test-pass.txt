@@ -1,0 +1,15 @@
+TAP version 13
+# Subtest: creates a hold
+ok 1 - creates a hold
+  ---
+  duration_ms: 1.2
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22.1

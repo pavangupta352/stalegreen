@@ -1,0 +1,7 @@
+
+/work/app/src/lib/hold.ts
+  41:9  error  'remaining' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  52:3  error  Unexpected console statement                    no-console
+
+✖ 2 problems (2 errors, 0 warnings)
+

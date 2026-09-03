@@ -1,0 +1,5 @@
+    Checking holds v0.3.1 (/work/holds)
+warning: unused variable: `remaining`
+  --> src/hold.rs:41:9
+warning: `holds` (lib) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.50s

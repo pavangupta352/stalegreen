@@ -1,0 +1,3 @@
+.github/workflows/ci.yml
+  12:81     error    line too long (91 > 80 characters)  (line-length)
+

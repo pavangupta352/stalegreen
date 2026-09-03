@@ -1,0 +1,9 @@
+[info] HoldSpec:
+[info] - should expire after ttl *** FAILED ***
+[info]   1 did not equal 0 (HoldSpec.scala:22)
+[info] Tests: succeeded 8, failed 1, canceled 0, ignored 0, pending 0
+[info] *** 1 TEST FAILED ***
+[error] Failed: Total 9, Failed 1, Errors 0, Passed 8
+[error] Failed tests:
+[error] 	com.example.HoldSpec
+[error] (Test / test) sbt.TestsFailedException: Tests unsuccessful

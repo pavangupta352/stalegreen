@@ -1,0 +1,6 @@
+Test Suite 'All tests' started at 2026-09-02 14:05:41.001
+/work/Tests/HoldTests.swift:22: error: HoldTests.testExpires : XCTAssertEqual failed: ("1") is not equal to ("0")
+Test Suite 'HoldTests' failed at 2026-09-02 14:05:41.130.
+	 Executed 11 tests, with 1 failure (0 unexpected) in 0.128 (0.129) seconds
+Test Suite 'All tests' failed at 2026-09-02 14:05:41.131.
+	 Executed 11 tests, with 1 failure (0 unexpected) in 0.128 (0.130) seconds

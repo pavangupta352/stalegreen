@@ -1,0 +1,5 @@
+INFO: Build completed, 1 test FAILED, 4 total actions
+//holds:hold_test                                                        FAILED in 0.4s
+  /private/var/tmp/_bazel/execroot/testlogs/holds/hold_test/test.log
+
+Executed 1 out of 1 test: 1 fails locally.

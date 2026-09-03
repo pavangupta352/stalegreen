@@ -1,0 +1,5 @@
+vite v6.1.0 building for production...
+✓ 3 modules transformed.
+x Build failed in 84ms
+error during build:
+src/lib/hold.ts (41:9): Expression expected

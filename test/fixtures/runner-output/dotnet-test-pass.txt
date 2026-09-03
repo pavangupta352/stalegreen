@@ -1,0 +1,7 @@
+  Determining projects to restore...
+  Holds.Tests -> /work/Holds.Tests/bin/Debug/net8.0/Holds.Tests.dll
+Test run for /work/Holds.Tests/bin/Debug/net8.0/Holds.Tests.dll (.NETCoreApp,Version=v8.0)
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    23, Skipped:     0, Total:    23, Duration: 210 ms - Holds.Tests.dll (net8.0)

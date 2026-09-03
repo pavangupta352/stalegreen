@@ -1,0 +1,5 @@
+app/holds.py:41:5: F841 Local variable `remaining` is assigned to but never used
+app/holds.py:52:1: E302 Expected 2 blank lines, found 1
+app/routes.py:12:1: F401 `os` imported but unused
+Found 3 errors.
+[*] 1 fixable with the `--fix` option.

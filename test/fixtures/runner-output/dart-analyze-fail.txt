@@ -1,0 +1,5 @@
+Analyzing app...
+
+  error • The argument type 'String' can't be assigned to the parameter type 'int' • lib/hold.dart:41:5 • argument_type_not_assignable
+
+1 issue found.

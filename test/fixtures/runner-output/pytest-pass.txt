@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.4, pytest-8.3.2, pluggy-1.5.0
+rootdir: /work/app
+configfile: pyproject.toml
+collected 41 items
+
+tests/test_holds.py .........................                                [ 60%]
+tests/test_routes.py ................                                        [100%]
+
+============================== 41 passed in 2.31s ==============================

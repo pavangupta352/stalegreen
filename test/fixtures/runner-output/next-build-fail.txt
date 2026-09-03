@@ -1,0 +1,11 @@
+  ▲ Next.js 15.4.2
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./src/lib/hold.ts:41:9
+Type error: Type 'string' is not assignable to type 'number'.
+
+  39 |   const remaining = compute(hold);
+> 41 |   remaining = "0";
+     |   ^

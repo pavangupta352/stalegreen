@@ -1,0 +1,8 @@
+Test project /work/build
+      Start  1: hold_create
+ 1/14 Test  #1: hold_create ......................   Passed    0.01 sec
+14/14 Test #14: route_pay ........................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) =   0.31 sec

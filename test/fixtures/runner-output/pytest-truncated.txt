@@ -1,0 +1,5 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.4, pytest-8.3.2, pluggy-1.5.0
+collected 41 items
+
+tests/test_holds.py .........................                                [ 60%]

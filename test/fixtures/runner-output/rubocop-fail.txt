@@ -1,0 +1,8 @@
+Inspecting 18 files
+.......C..........
+
+Offenses:
+
+lib/hold.rb:41:5: C: Style/StringLiterals: Prefer single-quoted strings.
+
+18 files inspected, 1 offense detected

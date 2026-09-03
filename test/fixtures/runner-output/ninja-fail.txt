@@ -1,0 +1,4 @@
+[1/4] Building CXX object CMakeFiles/holds.dir/hold.cpp.o
+FAILED: CMakeFiles/holds.dir/hold.cpp.o
+hold.cpp:41:5: error: use of undeclared identifier 'remaining'
+ninja: build stopped: subcommand failed.

@@ -1,0 +1,6 @@
+************* Module app.holds
+app/holds.py:41:4: W0612: Unused variable 'remaining' (unused-variable)
+
+------------------------------------------------------------------
+Your code has been rated at 9.62/10 (previous run: 10.00/10, -0.38)
+

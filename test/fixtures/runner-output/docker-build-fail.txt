@@ -1,0 +1,7 @@
+[+] Building 4.1s (6/10)
+ => ERROR [5/5] RUN npm ci
+------
+ > [5/5] RUN npm ci:
+0.912 npm ERR! code E404
+------
+ERROR: failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1

@@ -1,0 +1,2 @@
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0

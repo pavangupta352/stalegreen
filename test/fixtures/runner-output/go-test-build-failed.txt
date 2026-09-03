@@ -1,0 +1,3 @@
+# example.com/app/holds [example.com/app/holds.test]
+./holds_test.go:12:2: undefined: releaseHold
+FAIL	example.com/app/holds [build failed]

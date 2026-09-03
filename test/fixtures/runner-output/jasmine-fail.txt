@@ -1,0 +1,10 @@
+Started
+..F...
+
+Failures:
+1) holds expires after ttl
+  Message:
+    Expected 1 to equal 0.
+
+6 specs, 1 failure
+Finished in 0.024 seconds

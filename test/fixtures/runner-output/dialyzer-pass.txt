@@ -1,0 +1,4 @@
+Starting Dialyzer
+Total errors: 0, Skipped: 0, Unnecessary Skips: 0
+done in 0m4.12s
+done (passed successfully)

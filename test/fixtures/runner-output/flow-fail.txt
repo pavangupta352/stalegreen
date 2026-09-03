@@ -1,0 +1,7 @@
+Error ------------------------------------------------------------------------------------ src/holds.js:41:5
+
+Cannot assign "0" to remaining because string [1] is incompatible with number [2].
+
+
+
+Found 1 error

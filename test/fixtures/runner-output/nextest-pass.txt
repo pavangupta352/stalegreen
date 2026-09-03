@@ -1,0 +1,6 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Starting 17 tests across 1 binary
+        PASS [   0.004s] holds hold::tests::creates
+        PASS [   0.003s] holds hold::tests::expires
+------------
+     Summary [   0.031s] 17 tests run: 17 passed, 0 skipped

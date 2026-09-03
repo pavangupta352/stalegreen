@@ -1,0 +1,10 @@
+bun test v1.1.29 (7fb4e3f4)
+
+test/holds.test.ts:
+✓ creates a hold [0.31ms]
+✓ expires after ttl [0.08ms]
+
+ 9 pass
+ 0 fail
+ 14 expect() calls
+Ran 9 tests across 1 files. [18.00ms]

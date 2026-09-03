@@ -1,0 +1,5 @@
+
+src/styles/hold.css
+  12:3  ✖  Unexpected unknown property "colr"  property-no-unknown
+
+✖ 1 problem (1 error, 0 warnings)

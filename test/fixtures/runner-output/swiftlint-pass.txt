@@ -1,0 +1,3 @@
+Linting Swift files in current working directory
+Linting 'Hold.swift' (1/1)
+Done linting! Found 0 violations, 0 serious in 1 file.

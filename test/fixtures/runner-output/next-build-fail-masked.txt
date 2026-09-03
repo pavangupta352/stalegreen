@@ -1,0 +1,4 @@
+Failed to compile.
+
+./src/lib/hold.ts:41:9
+Type error: Type 'string' is not assignable to type 'number'.

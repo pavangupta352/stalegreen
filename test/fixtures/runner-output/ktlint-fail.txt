@@ -1,0 +1,4 @@
+src/main/kotlin/Hold.kt:41:5: Unexpected indentation (expected 8, actual 5) (standard:indent)
+
+Summary error count (descending) by rule:
+  standard:indent: 1

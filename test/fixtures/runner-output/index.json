@@ -1,0 +1,1606 @@
+[
+  {
+    "file": "pytest-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 41
+    }
+  },
+  {
+    "file": "pytest-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "passed": 40,
+      "failed": 1
+    }
+  },
+  {
+    "file": "pytest-fail-masked.txt",
+    "category": "test",
+    "exit": null,
+    "verdict": "fail",
+    "counts": {
+      "passed": 40,
+      "failed": 1
+    }
+  },
+  {
+    "file": "pytest-pass-skips.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 12,
+      "skipped": 3
+    }
+  },
+  {
+    "file": "pytest-no-tests.txt",
+    "category": "test",
+    "exit": 5,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "pytest-no-tests-exit0.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "inconclusive",
+    "counts": {}
+  },
+  {
+    "file": "pytest-truncated.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "inconclusive",
+    "counts": {}
+  },
+  {
+    "file": "pytest-quiet-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 9
+    }
+  },
+  {
+    "file": "pytest-error-collect.txt",
+    "category": "test",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "unittest-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "total": 7,
+      "passed": 7
+    }
+  },
+  {
+    "file": "unittest-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "total": 7,
+      "failed": 1
+    }
+  },
+  {
+    "file": "jest-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 41,
+      "total": 41
+    }
+  },
+  {
+    "file": "jest-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "failed": 1,
+      "passed": 40,
+      "total": 41
+    }
+  },
+  {
+    "file": "jest-pass-skipped.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 38,
+      "skipped": 3,
+      "total": 41
+    }
+  },
+  {
+    "file": "jest-no-tests.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "vitest-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 41,
+      "total": 41
+    }
+  },
+  {
+    "file": "vitest-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "failed": 2,
+      "passed": 39,
+      "total": 41
+    }
+  },
+  {
+    "file": "vitest-pass-skipped.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 40,
+      "skipped": 1,
+      "total": 41
+    }
+  },
+  {
+    "file": "vitest-fail-unhandled.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "vitest-no-tests.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "mocha-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 12
+    }
+  },
+  {
+    "file": "mocha-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "passed": 11,
+      "failed": 1
+    }
+  },
+  {
+    "file": "ava-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 8
+    }
+  },
+  {
+    "file": "ava-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "passed": 7,
+      "failed": 1
+    }
+  },
+  {
+    "file": "node-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 5,
+      "failed": 0
+    }
+  },
+  {
+    "file": "node-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "passed": 4,
+      "failed": 1
+    }
+  },
+  {
+    "file": "bun-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  {
+    "file": "bun-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "passed": 8,
+      "failed": 1
+    }
+  },
+  {
+    "file": "deno-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 6,
+      "failed": 0
+    }
+  },
+  {
+    "file": "deno-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "passed": 5,
+      "failed": 1
+    }
+  },
+  {
+    "file": "playwright-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 14
+    }
+  },
+  {
+    "file": "playwright-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "failed": 1,
+      "passed": 13
+    }
+  },
+  {
+    "file": "cypress-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "cypress-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "jasmine-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "total": 6,
+      "failed": 0,
+      "passed": 6
+    }
+  },
+  {
+    "file": "jasmine-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "total": 6,
+      "failed": 1,
+      "passed": 5
+    }
+  },
+  {
+    "file": "go-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "go-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "go-test-verbose-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "go-test-build-failed.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "go-test-no-test-files.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "inconclusive",
+    "counts": {}
+  },
+  {
+    "file": "cargo-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  {
+    "file": "cargo-test-fail.txt",
+    "category": "test",
+    "exit": 101,
+    "verdict": "fail",
+    "counts": {
+      "passed": 16,
+      "failed": 1,
+      "skipped": 0
+    }
+  },
+  {
+    "file": "cargo-test-compile-error.txt",
+    "category": "test",
+    "exit": 101,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "nextest-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "total": 17,
+      "passed": 17
+    }
+  },
+  {
+    "file": "nextest-fail.txt",
+    "category": "test",
+    "exit": 100,
+    "verdict": "fail",
+    "counts": {
+      "total": 17,
+      "passed": 16,
+      "failed": 1
+    }
+  },
+  {
+    "file": "dotnet-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "failed": 0,
+      "passed": 23,
+      "skipped": 0,
+      "total": 23
+    }
+  },
+  {
+    "file": "dotnet-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "failed": 1,
+      "passed": 22,
+      "skipped": 0,
+      "total": 23
+    }
+  },
+  {
+    "file": "maven-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "total": 31,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 31
+    }
+  },
+  {
+    "file": "maven-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "total": 31,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 30
+    }
+  },
+  {
+    "file": "gradle-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "gradle-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "total": 31,
+      "failed": 1,
+      "passed": 30
+    }
+  },
+  {
+    "file": "rspec-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "total": 28,
+      "failed": 0,
+      "passed": 28
+    }
+  },
+  {
+    "file": "rspec-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "total": 28,
+      "failed": 1,
+      "passed": 27
+    }
+  },
+  {
+    "file": "minitest-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "total": 19,
+      "failed": 0,
+      "errors": 0,
+      "passed": 19
+    }
+  },
+  {
+    "file": "minitest-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "total": 19,
+      "failed": 1,
+      "errors": 0,
+      "passed": 18
+    }
+  },
+  {
+    "file": "phpunit-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 22,
+      "total": 22,
+      "failed": 0
+    }
+  },
+  {
+    "file": "phpunit-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "total": 22,
+      "failed": 1,
+      "errors": 0,
+      "passed": 21
+    }
+  },
+  {
+    "file": "mix-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "total": 33,
+      "failed": 0,
+      "passed": 33
+    }
+  },
+  {
+    "file": "mix-test-fail.txt",
+    "category": "test",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {
+      "total": 33,
+      "failed": 1,
+      "passed": 32
+    }
+  },
+  {
+    "file": "swift-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "total": 11,
+      "failed": 0,
+      "passed": 11
+    }
+  },
+  {
+    "file": "swift-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "total": 11,
+      "failed": 1,
+      "passed": 10
+    }
+  },
+  {
+    "file": "dart-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "dart-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "ctest-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "failed": 0,
+      "total": 14,
+      "passed": 14
+    }
+  },
+  {
+    "file": "ctest-fail.txt",
+    "category": "test",
+    "exit": 8,
+    "verdict": "fail",
+    "counts": {
+      "failed": 1,
+      "total": 14,
+      "passed": 13
+    }
+  },
+  {
+    "file": "bazel-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "bazel-test-fail.txt",
+    "category": "test",
+    "exit": 3,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "elm-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "elm-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "sbt-test-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "sbt-test-fail.txt",
+    "category": "test",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "tsc-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "tsc-fail.txt",
+    "category": "typecheck",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {
+      "errors": 2
+    }
+  },
+  {
+    "file": "tsc-fail-masked.txt",
+    "category": "typecheck",
+    "exit": null,
+    "verdict": "fail",
+    "counts": {
+      "errors": 2
+    }
+  },
+  {
+    "file": "tsc-pretty-false-fail.txt",
+    "category": "typecheck",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "tsc-watch-style-zero.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "errors": 0
+    }
+  },
+  {
+    "file": "vue-tsc-fail.txt",
+    "category": "typecheck",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "errors": 1
+    }
+  },
+  {
+    "file": "svelte-check-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "errors": 0
+    }
+  },
+  {
+    "file": "svelte-check-fail.txt",
+    "category": "typecheck",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "errors": 1
+    }
+  },
+  {
+    "file": "mypy-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "mypy-fail.txt",
+    "category": "typecheck",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "errors": 1
+    }
+  },
+  {
+    "file": "pyright-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "errors": 0
+    }
+  },
+  {
+    "file": "pyright-fail.txt",
+    "category": "typecheck",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "errors": 1
+    }
+  },
+  {
+    "file": "flow-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "flow-fail.txt",
+    "category": "typecheck",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {
+      "errors": 1
+    }
+  },
+  {
+    "file": "cargo-check-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "cargo-check-fail.txt",
+    "category": "typecheck",
+    "exit": 101,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "deno-check-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "deno-check-fail.txt",
+    "category": "typecheck",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "phpstan-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "phpstan-fail.txt",
+    "category": "typecheck",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "sorbet-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "sorbet-fail.txt",
+    "category": "typecheck",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "dialyzer-pass.txt",
+    "category": "typecheck",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "dialyzer-fail.txt",
+    "category": "typecheck",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "eslint-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "eslint-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "errors": 2
+    }
+  },
+  {
+    "file": "eslint-warnings-only.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "errors": 0
+    }
+  },
+  {
+    "file": "eslint-fail-masked.txt",
+    "category": "lint",
+    "exit": null,
+    "verdict": "fail",
+    "counts": {
+      "errors": 2
+    }
+  },
+  {
+    "file": "biome-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "biome-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "ruff-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "ruff-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "errors": 3
+    }
+  },
+  {
+    "file": "ruff-format-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "ruff-format-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "black-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "black-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "isort-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "isort-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "flake8-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "flake8-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "pylint-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "pylint-fail.txt",
+    "category": "lint",
+    "exit": 4,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "golangci-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "golangci-pass-silent.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "golangci-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "govet-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "govet-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "clippy-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "clippy-fail.txt",
+    "category": "lint",
+    "exit": 101,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "clippy-warnings-only.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "rustfmt-check-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "rustfmt-check-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "rubocop-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "rubocop-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "errors": 1
+    }
+  },
+  {
+    "file": "oxlint-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "errors": 0
+    }
+  },
+  {
+    "file": "oxlint-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {
+      "errors": 1
+    }
+  },
+  {
+    "file": "stylelint-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "stylelint-fail.txt",
+    "category": "lint",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "prettier-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "prettier-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "shellcheck-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "shellcheck-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "phpcs-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "phpcs-fail.txt",
+    "category": "lint",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "credo-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "credo-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "swiftlint-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "swiftlint-fail.txt",
+    "category": "lint",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "dart-analyze-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "dart-analyze-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "ktlint-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "ktlint-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "detekt-fail.txt",
+    "category": "lint",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "hadolint-pass.txt",
+    "category": "lint",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "hadolint-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "yamllint-fail.txt",
+    "category": "lint",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "next-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "next-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "next-build-fail-masked.txt",
+    "category": "build",
+    "exit": null,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "vite-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "vite-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "webpack-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "webpack-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "esbuild-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "esbuild-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "tsup-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "tsup-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "rollup-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "rollup-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "cargo-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "cargo-build-fail.txt",
+    "category": "build",
+    "exit": 101,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "go-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "go-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "make-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "make-fail.txt",
+    "category": "build",
+    "exit": 2,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "npm-run-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "pnpm-run-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "pnpm-run-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "turbo-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "turbo-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "gradle-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "gradle-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "maven-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "maven-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "dotnet-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "dotnet-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "xcodebuild-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "xcodebuild-fail.txt",
+    "category": "build",
+    "exit": 65,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "swift-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "swift-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "docker-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "docker-build-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "ninja-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "ninja-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "mix-compile-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "mix-compile-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "python-build-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "elm-make-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "elm-make-fail.txt",
+    "category": "build",
+    "exit": 1,
+    "verdict": "fail",
+    "counts": {}
+  },
+  {
+    "file": "parcel-pass.txt",
+    "category": "build",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {}
+  },
+  {
+    "file": "go-test-masked-grep.txt",
+    "category": "test",
+    "exit": null,
+    "verdict": "inconclusive",
+    "counts": {}
+  },
+  {
+    "file": "vitest-pass-masked.txt",
+    "category": "test",
+    "exit": null,
+    "verdict": "inconclusive",
+    "counts": {
+      "passed": 41,
+      "total": 41
+    }
+  },
+  {
+    "file": "jest-fail-exit0.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "inconclusive",
+    "counts": {
+      "failed": 1,
+      "passed": 40,
+      "total": 41
+    }
+  },
+  {
+    "file": "pytest-ansi-pass.txt",
+    "category": "test",
+    "exit": 0,
+    "verdict": "pass",
+    "counts": {
+      "passed": 3
+    }
+  },
+  {
+    "file": "interrupted.txt",
+    "category": "test",
+    "exit": null,
+    "verdict": "inconclusive",
+    "counts": {},
+    "interrupted": true
+  },
+  {
+    "file": "command-not-found.txt",
+    "category": "test",
+    "exit": 127,
+    "verdict": "fail",
+    "counts": {}
+  }
+]

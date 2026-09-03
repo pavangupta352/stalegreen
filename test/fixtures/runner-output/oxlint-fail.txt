@@ -1,0 +1,5 @@
+  ! eslint(no-unused-vars): Variable 'remaining' is declared but never used.
+   ,-[src/lib/hold.ts:41:9]
+
+Found 0 warnings and 1 error.
+Finished in 10ms on 38 files with 90 rules using 8 threads.

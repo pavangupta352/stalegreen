@@ -1,0 +1,7 @@
+
+====================================
+Loading svelte-check in workspace: /work/app
+Getting Svelte diagnostics...
+
+====================================
+svelte-check found 0 errors and 0 warnings

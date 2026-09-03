@@ -1,0 +1,2 @@
+/work/Sources/Hold.swift:41:20: error: cannot assign value of type 'String' to type 'Int'
+** BUILD FAILED **

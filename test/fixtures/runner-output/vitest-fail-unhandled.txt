@@ -1,0 +1,9 @@
+ RUN  v3.2.7 /work/app
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+
+ Test Files  1 failed (1)
+      Tests  no tests
+     Errors  1 error

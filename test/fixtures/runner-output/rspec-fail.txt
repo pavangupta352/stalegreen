@@ -1,0 +1,16 @@
+.........F..................
+
+Failures:
+
+  1) Hold expires after ttl
+     Failure/Error: expect(hold.remaining).to eq(0)
+
+       expected: 0
+            got: 1
+
+Finished in 0.44 seconds (files took 0.9 seconds to load)
+28 examples, 1 failure
+
+Failed examples:
+
+rspec ./spec/hold_spec.rb:22 # Hold expires after ttl

@@ -1,0 +1,5 @@
+/work/Holds/Hold.cs(41,20): error CS0029: Cannot implicitly convert type 'string' to 'int' [/work/Holds/Holds.csproj]
+
+Build FAILED.
+    0 Warning(s)
+    1 Error(s)

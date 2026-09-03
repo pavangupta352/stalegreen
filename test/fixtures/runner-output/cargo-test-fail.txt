@@ -1,0 +1,21 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.90s
+     Running unittests src/lib.rs (target/debug/deps/holds-4a1e9c)
+
+running 17 tests
+test hold::tests::creates ... ok
+test hold::tests::expires ... FAILED
+
+failures:
+
+---- hold::tests::expires stdout ----
+thread 'hold::tests::expires' panicked at src/hold.rs:44:9:
+assertion `left == right` failed
+  left: 1
+ right: 0
+
+failures:
+    hold::tests::expires
+
+test result: FAILED. 16 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`

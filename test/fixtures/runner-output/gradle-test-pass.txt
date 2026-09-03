@@ -1,0 +1,5 @@
+> Task :compileKotlin
+> Task :test
+
+BUILD SUCCESSFUL in 12s
+5 actionable tasks: 2 executed, 3 up-to-date

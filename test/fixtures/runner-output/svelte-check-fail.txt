@@ -1,0 +1,2 @@
+====================================
+svelte-check found 1 error and 0 warnings in 1 file

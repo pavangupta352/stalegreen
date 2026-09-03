@@ -1,0 +1,4 @@
+ERROR in ./src/lib/hold.ts 41:9
+Module parse failed: Unexpected token (41:9)
+
+webpack 5.94.0 compiled with 1 error in 1720 ms

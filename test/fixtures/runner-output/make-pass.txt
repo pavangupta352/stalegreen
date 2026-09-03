@@ -1,0 +1,2 @@
+cc -O2 -c hold.c -o hold.o
+cc -O2 -o holds hold.o main.o

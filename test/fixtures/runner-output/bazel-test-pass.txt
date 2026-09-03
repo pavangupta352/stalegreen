@@ -1,0 +1,8 @@
+INFO: Analyzed 3 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets and 1 test target...
+INFO: Elapsed time: 1.203s, Critical Path: 0.88s
+INFO: 4 processes: 1 internal, 3 darwin-sandbox.
+INFO: Build completed successfully, 4 total actions
+//holds:hold_test                                                        PASSED in 0.4s
+
+Executed 1 out of 1 test: 1 test passes.

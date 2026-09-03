@@ -1,0 +1,7 @@
+
+In scripts/release.sh line 12:
+rm -rf $DIR/*
+       ^--^ SC2086 (info): Double quote to prevent globbing and word splitting.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2086 -- Double quote to prevent globbing ...

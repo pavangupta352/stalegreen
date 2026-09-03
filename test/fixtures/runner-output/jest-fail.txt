@@ -1,0 +1,13 @@
+PASS src/lib/hold.test.ts
+FAIL src/routes/pay.test.ts
+  ● pay route › rejects an expired hold
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 409
+    Received: 200
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       1 failed, 40 passed, 41 total
+Snapshots:   0 total
+Time:        1.901 s

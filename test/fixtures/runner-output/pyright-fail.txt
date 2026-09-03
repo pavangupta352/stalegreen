@@ -1,0 +1,4 @@
+/work/app/holds.py
+  /work/app/holds.py:41:5 - error: Type "str" is not assignable to declared type "int"
+    "str" is not assignable to "int" (reportAssignmentType)
+1 error, 0 warnings, 0 informations

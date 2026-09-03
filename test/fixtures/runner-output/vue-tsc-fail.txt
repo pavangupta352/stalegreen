@@ -1,0 +1,3 @@
+src/components/Hold.vue:18:7 - error TS2339: Property 'remaining' does not exist on type 'Hold'.
+
+Found 1 error in src/components/Hold.vue:18

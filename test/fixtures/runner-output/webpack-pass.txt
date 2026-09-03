@@ -1,0 +1,2 @@
+asset main.js 71.1 KiB [emitted] [minimized] (name: main)
+webpack 5.94.0 compiled successfully in 1842 ms

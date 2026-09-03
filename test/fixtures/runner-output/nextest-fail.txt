@@ -1,0 +1,7 @@
+    Starting 17 tests across 1 binary
+        PASS [   0.004s] holds hold::tests::creates
+        FAIL [   0.005s] holds hold::tests::expires
+------------
+     Summary [   0.030s] 17 tests run: 16 passed, 1 failed, 0 skipped
+        FAIL [   0.005s] holds hold::tests::expires
+error: test run failed

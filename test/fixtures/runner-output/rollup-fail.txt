@@ -1,0 +1,4 @@
+
+src/index.ts → dist/index.js...
+[!] RollupError: Expected ';', '}' or <eof>
+src/lib/hold.ts (41:12)

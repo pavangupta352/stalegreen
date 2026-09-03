@@ -1,0 +1,9 @@
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed Holds.Tests.HoldTests.Expires [12 ms]
+  Error Message:
+   Assert.Equal() Failure
+Expected: 0
+Actual:   1
+
+Failed!  - Failed:     1, Passed:    22, Skipped:     0, Total:    23, Duration: 233 ms - Holds.Tests.dll (net8.0)

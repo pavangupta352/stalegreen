@@ -1,0 +1,11 @@
+CLI Building entry: src/index.ts
+CLI tsup v8.5.1
+ESM Build start
+✘ [ERROR] Expected ";" but found "="
+
+    src/lib/hold.ts:41:12:
+      41 │   remaining = "0"
+
+ESM Build failed
+Error: Build failed with 1 error:
+src/lib/hold.ts:41:12: ERROR: Expected ";" but found "="

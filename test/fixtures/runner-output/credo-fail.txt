@@ -1,0 +1,9 @@
+Checking 24 source files ...
+
+  Code Readability
+┃
+┃ [R] → Modules should have a @moduledoc tag.
+┃       lib/hold.ex:1:11 #(Hold)
+
+Analysis took 0.2 seconds (0.05s to load, 0.1s running 55 checks on 24 files)
+48 mods/funs, found 1 code readability issue.

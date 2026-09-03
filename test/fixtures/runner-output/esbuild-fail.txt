@@ -1,0 +1,7 @@
+✘ [ERROR] Expected ";" but found "="
+
+    src/lib/hold.ts:41:12:
+      41 │   remaining = "0"
+         │            ^
+
+1 error

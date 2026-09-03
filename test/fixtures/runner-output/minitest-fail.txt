@@ -1,0 +1,10 @@
+# Running:
+
+........F..........
+
+Failure:
+HoldTest#test_expires [test/hold_test.rb:22]:
+Expected: 0
+  Actual: 1
+
+19 runs, 30 assertions, 1 failures, 0 errors, 0 skips

@@ -1,0 +1,2 @@
+# example.com/app/holds
+vet: holds/hold.go:41:2: remaining declared and not used

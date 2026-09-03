@@ -1,0 +1,11 @@
+PHPUnit 11.3.1 by Sebastian Bergmann and contributors.
+
+.........F............                                            22 / 22 (100%)
+
+There was 1 failure:
+
+1) Tests\HoldTest::testExpires
+Failed asserting that 1 matches expected 0.
+
+FAILURES!
+Tests: 22, Assertions: 40, Failures: 1.

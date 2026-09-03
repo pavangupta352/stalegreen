@@ -1,0 +1,10 @@
+
+Running 14 tests using 4 workers
+
+  1) [chromium] › checkout.spec.ts:12:5 › rejects an expired hold
+
+    Error: expect(received).toBe(expected)
+
+  1 failed
+    [chromium] › checkout.spec.ts:12:5 › rejects an expired hold
+  13 passed (10.1s)

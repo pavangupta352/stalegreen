@@ -1,0 +1,5 @@
+> Task :compileKotlin
+> Task :jar
+
+BUILD SUCCESSFUL in 9s
+4 actionable tasks: 4 executed

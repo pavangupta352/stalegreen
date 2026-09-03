@@ -1,0 +1,6 @@
+cc -O2 -c hold.c -o hold.o
+hold.c:41:5: error: use of undeclared identifier 'remaining'
+    remaining = 0;
+    ^
+1 error generated.
+make: *** [hold.o] Error 1

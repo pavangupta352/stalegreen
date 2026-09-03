@@ -1,0 +1,6 @@
+=== RUN   TestCreate
+--- PASS: TestCreate (0.00s)
+=== RUN   TestExpiry
+--- PASS: TestExpiry (0.01s)
+PASS
+ok  	example.com/app/holds	0.015s

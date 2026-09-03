@@ -1,0 +1,6 @@
+-- TYPE MISMATCH --------------------------------------------------- src/Hold.elm
+
+The 1st argument to `remaining` is not what I expect:
+
+41|     remaining "0"
+                  ^^^

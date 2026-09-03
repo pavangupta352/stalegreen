@@ -1,0 +1,13 @@
+....F..
+======================================================================
+FAIL: test_expiry (tests.test_holds.HoldTests.test_expiry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work/app/tests/test_holds.py", line 40, in test_expiry
+    self.assertEqual(remaining, 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.014s
+
+FAILED (failures=1)

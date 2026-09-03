@@ -1,0 +1,10 @@
+Test project /work/build
+ 2/14 Test  #2: hold_expires .....................***Failed    0.01 sec
+
+93% tests passed, 1 tests failed out of 14
+
+Total Test time (real) =   0.30 sec
+
+The following tests FAILED:
+	  2 - hold_expires (Failed)
+Errors while running CTest

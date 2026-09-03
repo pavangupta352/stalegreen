@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+_________________ ERROR collecting tests/test_broken.py ________________________
+ImportError while importing test module '/work/app/tests/test_broken.py'.
+=========================== short test summary info ============================
+ERROR tests/test_broken.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.31s ===============================

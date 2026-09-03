@@ -1,0 +1,5 @@
+Hold.kt - [MagicNumber] at src/main/kotlin/Hold.kt:41:20
+
+Overall debt: 5min
+
+Build failed with 1 weighted issues.

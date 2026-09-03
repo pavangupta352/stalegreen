@@ -1,0 +1,6 @@
+
+/work/app/src/lib/hold.ts
+  52:3  warning  Unexpected console statement  no-console
+
+✖ 1 problem (0 errors, 1 warning)
+

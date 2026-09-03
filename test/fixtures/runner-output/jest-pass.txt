@@ -1,0 +1,8 @@
+PASS src/lib/hold.test.ts
+PASS src/routes/pay.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       41 passed, 41 total
+Snapshots:   0 total
+Time:        1.842 s
+Ran all test suites.

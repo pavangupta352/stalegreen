@@ -1,0 +1,3 @@
+Success! Compiled 3 modules.
+
+    Main ───> elm.js

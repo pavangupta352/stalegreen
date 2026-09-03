@@ -1,0 +1,5 @@
+src/lib/hold.ts:41:9 lint/correctness/noUnusedVariables ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✖ This variable is unused.
+
+Checked 38 files in 14ms. Found 1 error.

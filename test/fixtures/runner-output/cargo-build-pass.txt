@@ -1,0 +1,2 @@
+   Compiling holds v0.3.1 (/work/holds)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.31s

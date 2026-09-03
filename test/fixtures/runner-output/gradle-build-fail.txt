@@ -1,0 +1,6 @@
+> Task :compileKotlin FAILED
+e: file:///work/src/main/kotlin/Hold.kt:41:20 Type mismatch: inferred type is String but Int was expected
+
+FAILURE: Build failed with an exception.
+
+BUILD FAILED in 8s

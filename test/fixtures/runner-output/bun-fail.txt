@@ -1,0 +1,11 @@
+bun test v1.1.29 (7fb4e3f4)
+
+test/holds.test.ts:
+✓ creates a hold [0.31ms]
+✗ expires after ttl [0.44ms]
+  error: expect(received).toBe(expected)
+
+ 8 pass
+ 1 fail
+ 14 expect() calls
+Ran 9 tests across 1 files. [19.00ms]

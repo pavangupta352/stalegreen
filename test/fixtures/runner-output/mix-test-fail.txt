@@ -1,0 +1,13 @@
+Running ExUnit with seed: 88112, max_cases: 16
+
+..........F......................
+
+  1) test expires after ttl (HoldTest)
+     test/hold_test.exs:22
+     Assertion with == failed
+     code:  assert remaining == 0
+     left:  1
+     right: 0
+
+Finished in 0.3 seconds (0.1s async, 0.2s sync)
+33 tests, 1 failure

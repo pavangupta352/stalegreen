@@ -1,0 +1,10 @@
+elm-test 0.19.1-revision12
+--------------------------
+
+Running 6 tests. To reproduce these results, run: elm-test --fuzz 100 --seed 44
+
+TEST RUN PASSED
+
+Duration: 122 ms
+Passed:   6
+Failed:   0

@@ -1,0 +1,9 @@
+   Compiling holds v0.3.1 (/work/holds)
+error[E0425]: cannot find function `release_hold` in this scope
+  --> src/hold.rs:40:9
+   |
+40 |         release_hold(id);
+   |         ^^^^^^^^^^^^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `holds` (lib test) due to 1 previous error

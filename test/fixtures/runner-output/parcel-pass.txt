@@ -1,0 +1,4 @@
+✨ Built in 1.42s
+
+dist/index.html           1.1 KB    120ms
+dist/index.9c8d7e.js     71.1 KB    980ms
