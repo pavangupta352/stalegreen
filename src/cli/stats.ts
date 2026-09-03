@@ -1,26 +1,26 @@
 /**
  * `stalegreen stats`: rates over past sessions. How often a green claim was
  * stale, failed, masked or unbacked, and how often a verification run hid its
- * exit status, per model and per session kind.
+ * exit status, per harness, per model and per session kind.
  *
  * Sessions with no tool calls are excluded, and a status line the agent
  * repeats word for word within one session is counted once per verdict.
  */
 
-import { basename } from "node:path";
 import { loadConfig, parseDuration } from "../core/config.js";
 import type { VerdictKind } from "../core/grammar.js";
-import { claudeTranscriptFiles, replayClaudeSession, type ReplayVerdict, type SessionReplay } from "../harness/claude/transcript.js";
+import type { ReplayVerdict, SessionReplay } from "../harness/replay.js";
+import { harnessLabel, listSessionSources, replaySource, type HarnessChoice } from "./sessions.js";
 
 export interface StatsOptions {
   since: string;
-  harness: "claude";
+  harness: HarnessChoice;
   json: boolean;
   allMessages: boolean;
   limit: number;
 }
 
-export const DEFAULT_STATS: StatsOptions = { since: "90d", harness: "claude", json: false, allMessages: false, limit: 0 };
+export const DEFAULT_STATS: StatsOptions = { since: "90d", harness: "all", json: false, allMessages: false, limit: 0 };
 
 export interface ClaimTally {
   counted: number;
@@ -57,16 +57,18 @@ export interface StatsReport {
   claims: ClaimTally;
   runs: RunTally;
   rates: { stale: number | null; failed: number | null; masked: number | null; none: number | null; hiddenExit: number | null; hidFailure: number | null };
+  byHarness: Record<string, StatsBucket>;
   byModel: Record<string, StatsBucket>;
   bySessionKind: Record<string, StatsBucket>;
 }
 
-export type SessionKind = "interactive" | "sdk" | "unknown";
+export type SessionKind = "interactive" | "automated" | "unknown";
 
+/** `cli` sessions are interactive; SDK and `codex exec` sessions are automated. */
 export function sessionKind(entrypoint: string | null): SessionKind {
   if (!entrypoint) return "unknown";
   if (entrypoint === "cli") return "interactive";
-  if (/^sdk/i.test(entrypoint)) return "sdk";
+  if (/^sdk/i.test(entrypoint) || entrypoint === "exec") return "automated";
   return "unknown";
 }
 
@@ -114,6 +116,13 @@ function addRuns(into: RunTally, r: { total: number; masked: number; maskedWithF
   into.noResult += r.maskedInconclusive;
 }
 
+function fold(bucket: StatsBucket, counted: ReplayVerdict[], repeated: number, runs: { total: number; masked: number; maskedWithFailMarkers: number; maskedInconclusive: number } | null): void {
+  bucket.sessions++;
+  if (counted.length > 0) bucket.sessionsWithClaims++;
+  addClaims(bucket.claims, counted, repeated);
+  if (runs) addRuns(bucket.runs, runs);
+}
+
 /** Folds one replayed session into a report. Exported for tests. */
 export function foldSession(report: StatsReport, replay: SessionReplay): void {
   if (replay.toolCalls === 0) return;
@@ -122,25 +131,15 @@ export function foldSession(report: StatsReport, replay: SessionReplay): void {
   if (counted.length > 0) report.sessionsWithClaims++;
   addClaims(report.claims, counted, repeated);
   addRuns(report.runs, replay.runs);
-
-  const kind = (report.bySessionKind[sessionKind(replay.entrypoint)] ??= emptyBucket());
-  kind.sessions++;
-  if (counted.length > 0) kind.sessionsWithClaims++;
-  addClaims(kind.claims, counted, repeated);
-  addRuns(kind.runs, replay.runs);
-
+  fold((report.byHarness[replay.harness] ??= emptyBucket()), counted, repeated, replay.runs);
+  fold((report.bySessionKind[sessionKind(replay.entrypoint)] ??= emptyBucket()), counted, repeated, replay.runs);
   // Only models that issued a verification run or made a claim get a row; placeholder
   // models such as <synthetic> never do.
   const models = new Set<string>([...Object.keys(replay.runs.byModel), ...counted.map((v) => v.model ?? "unknown")]);
   for (const model of models) {
     if (model.startsWith("<")) continue;
-    const bucket = (report.byModel[model] ??= emptyBucket());
-    bucket.sessions++;
     const own = counted.filter((v) => (v.model ?? "unknown") === model);
-    if (own.length > 0) bucket.sessionsWithClaims++;
-    addClaims(bucket.claims, own, 0);
-    const runs = replay.runs.byModel[model];
-    if (runs) addRuns(bucket.runs, runs);
+    fold((report.byModel[model] ??= emptyBucket()), own, 0, replay.runs.byModel[model] ?? null);
   }
 }
 
@@ -163,7 +162,7 @@ export function finishReport(report: StatsReport): StatsReport {
 }
 
 export function emptyReport(since: string, harness: string): StatsReport {
-  return { since, harness, files: 0, seconds: 0, sessions: 0, sessionsWithClaims: 0, claims: emptyClaims(), runs: emptyRuns(), rates: { stale: null, failed: null, masked: null, none: null, hiddenExit: null, hidFailure: null }, byModel: {}, bySessionKind: {} };
+  return { since, harness, files: 0, seconds: 0, sessions: 0, sessionsWithClaims: 0, claims: emptyClaims(), runs: emptyRuns(), rates: { stale: null, failed: null, masked: null, none: null, hiddenExit: null, hidFailure: null }, byHarness: {}, byModel: {}, bySessionKind: {} };
 }
 
 function pct(part: number, whole: number): string {
@@ -175,15 +174,26 @@ function num(n: number, width = 7): string {
   return n.toLocaleString("en-US").padStart(width);
 }
 
-function shortModel(name: string): string {
+function shortName(name: string): string {
   return name.length > 28 ? `${name.slice(0, 27)}…` : name;
+}
+
+const HARNESS_NAMES: Record<string, string> = { claude: "Claude Code", codex: "Codex", dsh: "DeepSeek Harness" };
+
+function bucketTable(title: string, rows: [string, StatsBucket][]): string[] {
+  const lines = [`${title.padEnd(30)} ${"sessions".padStart(8)} ${"claims".padStart(7)} ${"stale".padStart(6)} ${"failed".padStart(6)} ${"masked".padStart(6)} ${"no run".padStart(6)} ${"runs".padStart(8)} ${"hidden".padStart(6)}`];
+  for (const [name, b] of rows) {
+    lines.push(`  ${shortName(name).padEnd(28)} ${num(b.sessions, 8)} ${num(b.claims.counted)} ${pct(b.claims.stale, b.claims.counted).padStart(6)} ${pct(b.claims.failed, b.claims.counted).padStart(6)} ${pct(b.claims.masked, b.claims.counted).padStart(6)} ${pct(b.claims.none, b.claims.counted).padStart(6)} ${num(b.runs.total, 8)} ${pct(b.runs.hidden, b.runs.total).padStart(6)}`);
+  }
+  return lines;
 }
 
 export function formatStats(report: StatsReport): string[] {
   const c = report.claims;
   const r = report.runs;
   const lines: string[] = [];
-  lines.push(`stalegreen stats: ${report.sessions.toLocaleString("en-US")} sessions with tool calls in the last ${report.since} (${report.harness === "claude" ? "Claude Code" : report.harness}, ${report.files} files, ${report.seconds.toFixed(1)}s)`);
+  const harness = HARNESS_NAMES[report.harness] ?? (report.harness === "all" ? "Claude Code and Codex" : report.harness);
+  lines.push(`stalegreen stats: ${report.sessions.toLocaleString("en-US")} sessions with tool calls in the last ${report.since} (${harness}, ${report.files} files, ${report.seconds.toFixed(1)}s)`);
   lines.push("");
   lines.push(`Green claims ${num(c.counted)}   in ${report.sessionsWithClaims} sessions${c.repeated > 0 ? `, ${c.repeated} repeated status lines counted once` : ""}`);
   lines.push(`  fresh      ${num(c.fresh)}  ${pct(c.fresh, c.counted)}   a passing run and no edits since`);
@@ -197,21 +207,20 @@ export function formatStats(report: StatsReport): string[] {
   lines.push(`  exit hidden     ${num(r.hidden)}  ${pct(r.hidden, r.total)}   piped, redirected, chained or sent to /dev/null`);
   lines.push(`  hid a failure   ${num(r.hidFailure)}  ${pct(r.hidFailure, r.total)}   exit hidden, failure marker in the visible output`);
   lines.push(`  no result       ${num(r.noResult)}  ${pct(r.noResult, r.total)}   exit hidden and no summary line either`);
+  const harnesses = Object.entries(report.byHarness).sort((a, b) => b[1].sessions - a[1].sessions);
+  if (harnesses.length > 1) {
+    lines.push("");
+    lines.push(...bucketTable("By harness", harnesses.map(([k, b]) => [HARNESS_NAMES[k] ?? k, b])));
+  }
   const models = Object.entries(report.byModel).sort((a, b) => b[1].claims.counted - a[1].claims.counted || b[1].runs.total - a[1].runs.total);
   if (models.length > 0) {
     lines.push("");
-    lines.push(`${"By model".padEnd(30)} ${"claims".padStart(7)} ${"stale".padStart(6)} ${"failed".padStart(6)} ${"masked".padStart(6)} ${"no run".padStart(6)} ${"runs".padStart(8)} ${"hidden".padStart(6)}`);
-    for (const [model, b] of models) {
-      lines.push(`  ${shortModel(model).padEnd(28)} ${num(b.claims.counted)} ${pct(b.claims.stale, b.claims.counted).padStart(6)} ${pct(b.claims.failed, b.claims.counted).padStart(6)} ${pct(b.claims.masked, b.claims.counted).padStart(6)} ${pct(b.claims.none, b.claims.counted).padStart(6)} ${num(b.runs.total, 8)} ${pct(b.runs.hidden, b.runs.total).padStart(6)}`);
-    }
+    lines.push(...bucketTable("By model", models));
   }
   const kinds = Object.entries(report.bySessionKind).sort((a, b) => b[1].sessions - a[1].sessions);
   if (kinds.length > 1) {
     lines.push("");
-    lines.push(`${"By session kind".padEnd(30)} ${"sessions".padStart(8)} ${"claims".padStart(7)} ${"stale".padStart(6)} ${"runs".padStart(8)} ${"hidden".padStart(6)}`);
-    for (const [kind, b] of kinds) {
-      lines.push(`  ${kind.padEnd(28)} ${num(b.sessions, 8)} ${num(b.claims.counted)} ${pct(b.claims.stale, b.claims.counted).padStart(6)} ${num(b.runs.total, 8)} ${pct(b.runs.hidden, b.runs.total).padStart(6)}`);
-    }
+    lines.push(...bucketTable("By session kind", kinds));
   }
   lines.push("");
   if (c.counted === 0 && r.total === 0) {
@@ -231,20 +240,19 @@ export async function runStats(opts: StatsOptions, log: (line: string) => void =
     return 2;
   }
   const since = new Date(Date.now() - ms);
-  let files = claudeTranscriptFiles(undefined, since);
-  if (opts.limit > 0) files = files.slice(0, opts.limit);
+  let sources = await listSessionSources(opts.harness, since);
+  if (opts.limit > 0) sources = sources.slice(0, opts.limit);
   const config = loadConfig(process.cwd());
   const report = emptyReport(opts.since, opts.harness);
-  report.files = files.length;
+  report.files = sources.reduce((n, s) => n + 1 + s.children.length, 0);
   const started = Date.now();
-  for (const f of files) {
+  for (const src of sources) {
     let replay: SessionReplay;
     try {
-      replay = await replayClaudeSession(f.file, { config, allMessages: opts.allMessages });
+      replay = await replaySource(src, { config, allMessages: opts.allMessages });
     } catch {
       continue;
     }
-    if (basename(f.file, ".jsonl").length === 0) continue;
     foldSession(report, replay);
   }
   report.seconds = (Date.now() - started) / 1000;
@@ -256,3 +264,5 @@ export async function runStats(opts: StatsOptions, log: (line: string) => void =
   for (const line of formatStats(report)) log(line);
   return 0;
 }
+
+export { harnessLabel };

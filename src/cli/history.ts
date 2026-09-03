@@ -7,11 +7,12 @@ import { basename } from "node:path";
 import { loadConfig, parseDuration } from "../core/config.js";
 import type { VerdictKind } from "../core/grammar.js";
 import { describeCounts } from "../core/receipts.js";
-import { claudeTranscriptFiles, replayClaudeSession, type ReplayVerdict, type SessionReplay } from "../harness/claude/transcript.js";
+import type { ReplayVerdict, SessionReplay } from "../harness/replay.js";
+import { harnessLabel, listSessionSources, replaySource, type HarnessChoice } from "./sessions.js";
 
 export interface HistoryOptions {
   since: string;
-  harness: "claude" | "all";
+  harness: HarnessChoice;
   includeNone: boolean;
   includeFresh: boolean;
   allMessages: boolean;
@@ -21,7 +22,7 @@ export interface HistoryOptions {
   session: string | null;
 }
 
-export const DEFAULT_HISTORY: HistoryOptions = { since: "30d", harness: "claude", includeNone: false, includeFresh: false, allMessages: false, json: false, limit: 0, explain: false, session: null };
+export const DEFAULT_HISTORY: HistoryOptions = { since: "30d", harness: "all", includeNone: false, includeFresh: false, allMessages: false, json: false, limit: 0, explain: false, session: null };
 
 function clock(ts: string): string {
   const d = new Date(ts);
@@ -41,7 +42,7 @@ export function formatHistoryVerdict(v: ReplayVerdict, explain: boolean, receipt
   const edits = after.length > 0 ? ` +${after.length} edit${after.length === 1 ? "" : "s"}: ${after.slice(0, 3).map((x) => (x.path ? basename(x.path) : x.kind)).join(", ")}${after.length > 3 ? ", ..." : ""}` : "";
   const head = `${clock(v.ts)}  ${v.verdict.verdict.padEnd(7)} ${v.claim.category.padEnd(9)} "${short(v.claim.text, 48)}"  <-  ${evidence}${edits}`;
   if (!explain) return head;
-  const lines = [head, `    session ${v.session}${v.model ? `  model ${v.model}` : ""}  distance ${v.distance} messages`];
+  const lines = [head, `    ${v.harness} session ${v.session}${v.model ? `  model ${v.model}` : ""}  distance ${v.distance} messages`];
   if (e) lines.push(`    evidence ${clock(e.ts)}  scope ${e.scope}  exit ${receipt?.exit ?? "?"}  signal ${receipt?.signal ?? "?"}  in ${e.cwd}`);
   if (receipt && receipt.source !== e?.cmd) lines.push(`    command ${short(receipt.source.replace(/\s+/g, " "), 160)}`);
   if (v.verdict.note) lines.push(`    note ${v.verdict.note}`);
@@ -66,9 +67,8 @@ export async function runHistory(opts: HistoryOptions, log: (line: string) => vo
     return 2;
   }
   const since = new Date(Date.now() - ms);
-  let files = claudeTranscriptFiles(undefined, since);
-  if (opts.session) files = files.filter((f) => basename(f.file, ".jsonl").startsWith(opts.session as string));
-  if (opts.limit > 0) files = files.slice(0, opts.limit);
+  let sources = await listSessionSources(opts.harness, since, opts.session);
+  if (opts.limit > 0) sources = sources.slice(0, opts.limit);
   const config = loadConfig(process.cwd());
   const all: { v: ReplayVerdict; receipt?: { source: string; maskReason?: string; exit: number | null; signal: string | null } }[] = [];
   let sessions = 0;
@@ -77,10 +77,11 @@ export async function runHistory(opts: HistoryOptions, log: (line: string) => vo
   const runs = { total: 0, masked: 0, maskedWithFailMarkers: 0, maskedInconclusive: 0 };
   const counts: Record<string, number> = {};
   const started = Date.now();
-  for (const f of files) {
+  const files = sources.reduce((n, s) => n + 1 + s.children.length, 0);
+  for (const src of sources) {
     let replay: SessionReplay;
     try {
-      replay = await replayClaudeSession(f.file, { config, allMessages: opts.allMessages });
+      replay = await replaySource(src, { config, allMessages: opts.allMessages });
     } catch {
       continue;
     }
@@ -101,10 +102,10 @@ export async function runHistory(opts: HistoryOptions, log: (line: string) => vo
   }
   all.sort((a, b) => (a.v.ts < b.v.ts ? 1 : a.v.ts > b.v.ts ? -1 : 0));
   if (opts.json) {
-    log(JSON.stringify({ since: opts.since, sessions, sessionsWithClaims, claims, runs, counts, verdicts: all.map((x) => ({ ...x.v, receipt: x.receipt ?? null })) }, null, 2));
+    log(JSON.stringify({ since: opts.since, harness: opts.harness, sessions, sessionsWithClaims, claims, runs, counts, verdicts: all.map((x) => ({ ...x.v, receipt: x.receipt ?? null })) }, null, 2));
     return 0;
   }
-  log(`stalegreen history: ${sessions} sessions with tool calls since ${opts.since} (${files.length} files, ${((Date.now() - started) / 1000).toFixed(1)}s)`);
+  log(`stalegreen history: ${sessions} sessions with tool calls since ${opts.since} (${harnessLabel(opts.harness)}, ${files} files, ${((Date.now() - started) / 1000).toFixed(1)}s)`);
   log(`claims ${claims} in ${sessionsWithClaims} sessions`);
   log(`verification runs ${runs.total}: exit masked ${runs.masked}, of which hid a failure ${runs.maskedWithFailMarkers}, left no result ${runs.maskedInconclusive}`);
   log(`verdicts: ${Object.entries(counts).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}`);

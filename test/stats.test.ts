@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_STATS, dedupeStatusLines, emptyReport, finishReport, foldSession, formatStats, runStats, sessionKind, type StatsReport } from "../src/cli/stats.js";
 import type { Claim, Verdict } from "../src/core/grammar.js";
-import type { ReplayVerdict, SessionReplay } from "../src/harness/claude/transcript.js";
+import type { ReplayVerdict, SessionReplay } from "../src/harness/replay.js";
 import { readFixture } from "./helpers.js";
 
 function claim(category: Claim["category"], sentence: string): Claim {
@@ -17,13 +17,14 @@ function verdict(kind: Verdict["verdict"], c: Claim): Verdict {
 
 function rv(session: string, kind: Verdict["verdict"], category: Claim["category"], sentence: string, model: string | null = "model-a"): ReplayVerdict {
   const c = claim(category, sentence);
-  return { file: `/x/${session}.jsonl`, session, ts: "2026-09-02T14:00:00.000Z", model, claim: c, verdict: verdict(kind, c), distance: 0 };
+  return { file: `/x/${session}.jsonl`, session, harness: "claude", ts: "2026-09-02T14:00:00.000Z", model, claim: c, verdict: verdict(kind, c), distance: 0 };
 }
 
 function replay(session: string, over: Partial<SessionReplay> = {}): SessionReplay {
   return {
     file: `/x/${session}.jsonl`,
     session,
+    harness: "claude",
     entrypoint: "cli",
     models: { "model-a": 3 },
     assistantMessages: 3,
@@ -57,8 +58,9 @@ describe("stats", () => {
 
   it("classifies session kinds from the entrypoint", () => {
     expect(sessionKind("cli")).toBe("interactive");
-    expect(sessionKind("sdk-py")).toBe("sdk");
-    expect(sessionKind("sdk-ts")).toBe("sdk");
+    expect(sessionKind("sdk-py")).toBe("automated");
+    expect(sessionKind("sdk-ts")).toBe("automated");
+    expect(sessionKind("exec")).toBe("automated");
     expect(sessionKind(null)).toBe("unknown");
     expect(sessionKind("desktop")).toBe("unknown");
   });
@@ -87,7 +89,8 @@ describe("stats", () => {
     expect(report.byModel["model-a"]).toMatchObject({ sessions: 3, sessionsWithClaims: 2, claims: { counted: 4, stale: 1, masked: 1 }, runs: { total: 11, hidden: 7 } });
     expect(report.byModel["model-b"]).toMatchObject({ sessions: 1, claims: { counted: 1, failed: 1 }, runs: { total: 1, hidden: 1 } });
     expect(report.bySessionKind["interactive"]).toMatchObject({ sessions: 1, claims: { counted: 4 }, runs: { total: 10 } });
-    expect(report.bySessionKind["sdk"]).toMatchObject({ sessions: 1, claims: { counted: 1 } });
+    expect(report.bySessionKind["automated"]).toMatchObject({ sessions: 1, claims: { counted: 1 } });
+    expect(report.byHarness["claude"]).toMatchObject({ sessions: 3, claims: { counted: 5 }, runs: { total: 12 } });
     expect(report.bySessionKind["unknown"]).toMatchObject({ sessions: 1, runs: { total: 2 } });
 
     const text = formatStats(report).join("\n");
@@ -144,13 +147,13 @@ describe("runStats over a transcript directory", () => {
     writeFileSync(join(slug, "22222222-2222-4333-8444-555555555555.jsonl"), record("assistant", { message: { id: "m9", model: "model-a", role: "assistant", content: [{ type: "text", text: "All tests pass." }] } }, "2026-09-02T14:00:30.000Z") + "\n");
 
     const out: string[] = [];
-    expect(await runStats({ ...DEFAULT_STATS, since: "36500d" }, (l) => out.push(l))).toBe(0);
+    expect(await runStats({ ...DEFAULT_STATS, harness: "claude", since: "36500d" }, (l) => out.push(l))).toBe(0);
     const text = out.join("\n");
     expect(text).toContain("1 sessions with tool calls");
     expect(text).toContain("50% of green claims were stale (1 of 2); 0% of verification runs hid their exit status (0 of 1).");
 
     const json: string[] = [];
-    expect(await runStats({ ...DEFAULT_STATS, since: "36500d", json: true }, (l) => json.push(l))).toBe(0);
+    expect(await runStats({ ...DEFAULT_STATS, harness: "claude", since: "36500d", json: true }, (l) => json.push(l))).toBe(0);
     const report = JSON.parse(json.join("\n")) as StatsReport;
     expect(report.sessions).toBe(1);
     expect(report.claims).toMatchObject({ counted: 2, fresh: 1, stale: 1 });
@@ -158,6 +161,6 @@ describe("runStats over a transcript directory", () => {
     expect(report.byModel["model-a"]).toMatchObject({ claims: { counted: 2 }, runs: { total: 1 } });
     expect(report.bySessionKind["interactive"]?.sessions).toBe(1);
 
-    expect(await runStats({ ...DEFAULT_STATS, since: "soon" }, (l) => out.push(l))).toBe(2);
+    expect(await runStats({ ...DEFAULT_STATS, harness: "claude", since: "soon" }, (l) => out.push(l))).toBe(2);
   });
 });
