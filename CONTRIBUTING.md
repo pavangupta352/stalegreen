@@ -17,6 +17,12 @@ Node 20 or newer. The suite runs the compiled hook as a real process and
 exercises the rewrite under `sh`, `bash` and `zsh`, so those shells need to be
 on your PATH (macOS and Ubuntu have them).
 
+`npm run build` also refreshes `plugin/hook.js`, the copy of the hook that
+the Claude Code plugin ships; a test fails when it lags the build, so commit
+it with the change that produced it. `npm run build:dsh` builds the DeepSeek
+Harness plugin in `dsh-plugin-stalegreen/` (its `lib/` is not committed).
+The README demo is rendered with `vhs docs/assets/demo.tape`.
+
 ## What a good change looks like
 
 - **A runner.** Add the detection rule in `src/core/runners.ts` (`classify`),
@@ -56,12 +62,13 @@ npm test
 
 Keep commits small and their messages plain. A change to a verdict rule
 should come with a sentence in the pull request explaining which real-world
-pattern motivated it.
+pattern motivated it. CI also runs gitleaks over the pushed commits, so keep
+made-up tokens in tests out of the shapes the default rules match.
 
 ## Reporting a false block
 
-Run `stalegreen check --json` in the session that was blocked and attach the
-output to the issue after removing anything private, or use
-`stalegreen redact <session>` once it ships. The verdict record names the
-receipt, the command and the edits that made the evidence stale, which is
-usually enough to reproduce the decision without the transcript.
+Run `stalegreen redact --out report.json` (add `--session <id>` for an older
+session), read through the file, and attach it to the issue. It holds the
+receipts, the edit events, the verdicts and the last lines of each run's log
+with paths shortened and secrets masked, which is usually enough to reproduce
+the decision without the transcript.
