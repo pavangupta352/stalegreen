@@ -7,6 +7,8 @@ Hooks that keep a coding agent's green claims honest: every verification run is 
 
 Zero tokens, zero network, zero telemetry. Every verdict is deterministic and cites a receipt.
 
+![An agent runs the tests, edits a file, says all tests pass, and is stopped with the receipt and the edited file; it reruns, sees the failure, fixes it and ends green](docs/assets/demo.gif)
+
 > Status: pre-release. The engine, the Claude Code and Codex hooks, the freshness gate and the session replay are complete and tested. The npm package and the plugin manifests land next. Until then, build from source (see below).
 
 ## The problem
@@ -191,8 +193,11 @@ stalegreen receipt <id>                      a run's receipt and the tail of its
 stalegreen doctor                            hooks, store health and the last verdicts
 stalegreen history [--since 30d] [--include-none] [--explain] [--json]
                                              replay past sessions: stale, failed and masked claims
-stalegreen stats [--since 90d] [--json]      the rates above, per model and per session kind
+stalegreen stats [--since 90d] [--json]      the rates above, per harness, model and session kind
+stalegreen redact [--session <id>] [--out f]  a shareable copy of a session for bug reports
 ```
+
+`redact` shortens paths to the repository-relative form, masks secrets in commands and output, and replaces the agent's prose with the matched claim, so a false block can be reported with the evidence and without the conversation.
 
 `history` and `stats` read `~/.claude/projects` (or `$CLAUDE_CONFIG_DIR/projects`) and `~/.codex/sessions` (or `$CODEX_HOME/sessions`) as streams, so a multi-gigabyte transcript is fine; `--harness claude|codex|all` picks the source. Codex child threads are merged into their parent, and the shell commands inside Codex's JavaScript exec cells are read out of the cell. They never write there and never leave the machine.
 

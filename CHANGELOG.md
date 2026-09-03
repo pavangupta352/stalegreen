@@ -41,6 +41,12 @@ Keep a Changelog, and the project uses semantic versioning.
   commands out of Codex's JavaScript exec cells.
 - The hook handlers are shared across harnesses through a small adapter
   (turn id, shell output shape, edit tools, allow decision, block format).
+- `stalegreen redact`: a shareable copy of a session (receipts, edits,
+  verdicts, pending and deferred runs, the tail of each log) with paths
+  shortened, secrets masked and the agent's prose replaced by the matched
+  claim. The false-block issue template asks for it.
+- A release workflow that publishes to npm through trusted publishing on a
+  version tag and creates the GitHub release.
 - Claude Code plugin packaging: `plugin/` holds the manifest, the hook
   registration (`${CLAUDE_PLUGIN_ROOT}/hook.js`) and a copy of the compiled
   hook that `npm run build` refreshes and a test keeps identical to the

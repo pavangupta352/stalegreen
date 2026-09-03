@@ -10,8 +10,8 @@ body:
   - type: textarea
     id: verdict
     attributes:
-      label: Verdict record
-      description: Output of `stalegreen check --json` for the session, with anything private removed. The relevant part is the last entry under `verdicts`.
+      label: Redacted session
+      description: Run `stalegreen redact --out report.json` (add `--session <id>` for an older one), look through the file, then paste it here or attach it. It holds the receipts, the edit events, the verdicts and the last lines of each run's log with paths shortened and secrets masked. `stalegreen check --json` works too if you prefer to trim it by hand.
       render: json
     validations:
       required: true

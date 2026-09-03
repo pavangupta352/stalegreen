@@ -10,6 +10,7 @@ import { describeCounts, readReceipts, readVerdicts, runLogPath } from "../core/
 import { listSessions, readJsonl } from "../core/store.js";
 import { VERSION } from "../version.js";
 import { DEFAULT_HISTORY, runHistory } from "./history.js";
+import { redactSession } from "./redact.js";
 import { HOOK_EVENTS, hookStatus, installHooks, uninstallHooks, type HarnessName } from "./install.js";
 import { parseHarnessChoice } from "./sessions.js";
 import { DEFAULT_STATS, runStats } from "./stats.js";
@@ -30,6 +31,8 @@ Usage:
   stalegreen stats [--since 90d] [--harness claude|codex|all] [--json]
                                                          stale, failed, masked and unbacked claim rates and the
                                                          hidden-exit rate of verification runs, per harness and model
+  stalegreen redact [--session <id>] [--out <file>] [--no-logs]
+                                                         a shareable copy of a session for bug reports
   stalegreen doctor                                      hooks, node, store health and the last verdicts
   stalegreen --version
   stalegreen --help
@@ -43,7 +46,7 @@ interface Args {
   flags: Map<string, string | true>;
 }
 
-const BOOLEAN_FLAGS = new Set(["json", "help", "version", "prune", "advisory", "all", "include-none", "include-fresh", "all-messages", "explain", "claude", "codex", "dsh", "project", "user"]);
+const BOOLEAN_FLAGS = new Set(["json", "help", "version", "prune", "advisory", "all", "include-none", "include-fresh", "all-messages", "explain", "claude", "codex", "dsh", "project", "user", "no-logs"]);
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { command: null, positional: [], flags: new Map() };
@@ -144,6 +147,24 @@ function cmdReceipt(args: Args): number {
     console.log(`Log tail (${log}):`);
     for (const l of lines.slice(-40)) console.log(`  ${l}`);
   }
+  return 0;
+}
+
+function cmdRedact(args: Args): number {
+  const root = resolveSession(args.flags.get("session"));
+  if (!root) {
+    console.error("No sessions recorded yet.");
+    return 1;
+  }
+  const out = redactSession(root, { logs: !args.flags.has("no-logs") });
+  const text = JSON.stringify(out, null, 2) + "\n";
+  const file = args.flags.get("out");
+  if (typeof file === "string" && file) {
+    writeFileSync(file, text);
+    console.log(`Wrote ${file} (${out.receipts.length} receipts, ${out.edits.length} edits, ${out.verdicts.length} stop verdicts). Review it before attaching it to a report.`);
+    return 0;
+  }
+  process.stdout.write(text);
   return 0;
 }
 
@@ -298,6 +319,8 @@ export async function main(argv: string[]): Promise<number> {
       return cmdStats(args);
     case "doctor":
       return cmdDoctor();
+    case "redact":
+      return cmdRedact(args);
     case "install":
       return cmdInstall(args, false);
     case "uninstall":
