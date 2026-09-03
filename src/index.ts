@@ -42,6 +42,7 @@ export { deriveSession, listSessions, sessionDir } from "./core/store.js";
 export type { SessionRef } from "./core/store.js";
 export { runClaudeHook } from "./harness/claude/hooks.js";
 export { runCodexHook } from "./harness/codex/hooks.js";
+export { dshAdapter, runDshHook, splitDshOutput } from "./harness/dsh/hooks.js";
 export { applyPatchEdits, exitFromCellOutput, extractExecCommands, parseCodexExecOutput } from "./harness/codex/output.js";
 export type { CodexExecOutput, CodexRunState } from "./harness/codex/output.js";
 export { runHook } from "./harness/hooks.js";

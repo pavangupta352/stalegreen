@@ -3475,7 +3475,8 @@ function runHook(adapter, event, raw) {
   }
 }
 function preToolUse({ adapter, input, cwd, config, root, agent, dir }) {
-  if (str(input.tool_name) !== "Bash") return { exit: 0 };
+  const toolName = str(input.tool_name);
+  if (toolName !== "Bash" && toolName !== "bash") return { exit: 0 };
   const toolInput = obj(input.tool_input);
   const command = str(toolInput.command);
   if (!command) return { exit: 0 };
@@ -3924,6 +3925,57 @@ function runCodexHook(event, raw) {
   return runHook(codexAdapter, event, raw);
 }
 
+// src/harness/dsh/hooks.ts
+var EXIT_MARKER_RE = /\[exit code: (-?\d+)\]\s*$/;
+var SAVED_OUTPUT_RE = /(?:full output (?:was )?saved to|saved to file):?\s+(\S+)/i;
+var FILE_TOOLS = /* @__PURE__ */ new Set(["edit", "write", "str_replace_editor", "Edit", "Write", "MultiEdit", "NotebookEdit"]);
+function splitDshOutput(text) {
+  const m = EXIT_MARKER_RE.exec(text);
+  const output = m ? text.slice(0, m.index).replace(/\s+$/, "") : text;
+  const saved = SAVED_OUTPUT_RE.exec(text);
+  return { output, exit: m ? Number(m[1]) : null, savedTo: saved ? saved[1] : null };
+}
+var dshAdapter = {
+  harness: "dsh",
+  rewriteNeedsAllow: true,
+  turnId: (input) => input.turn === void 0 || input.turn === null ? null : String(input.turn),
+  allowDecision: () => ({ allow: false, reason: "" }),
+  shellRun(input) {
+    const toolName = str(input.tool_name);
+    if (toolName !== "bash" && toolName !== "Bash") return null;
+    const toolInput = obj(input.tool_input);
+    const command = str(toolInput.command);
+    if (!command) return null;
+    const text = typeof input.tool_response === "string" ? input.tool_response : str(obj(input.tool_response).text) ?? "";
+    const { output, exit } = splitDshOutput(text);
+    const background = toolInput.run_in_background === true;
+    const known = exit !== null ? exit : input.is_error === true ? null : 0;
+    return { command, stdout: output, stderr: "", exit: known, exitFailed: false, interrupted: false, background, cellId: null };
+  },
+  deferredOutput(input) {
+    const toolName = str(input.tool_name);
+    if (toolName !== "job_output") return null;
+    const text = typeof input.tool_response === "string" ? input.tool_response : "";
+    const { output, exit } = splitDshOutput(text);
+    return { text: output, state: exit === null ? null : exit === 0 ? "completed" : "failed", exit, cellId: null };
+  },
+  editsFromTool(toolName, toolInput) {
+    if (!FILE_TOOLS.has(toolName)) return [];
+    const input = obj(toolInput);
+    if (toolName === "str_replace_editor" && str(input.command) === "view") return [];
+    const path = str(input.path) ?? str(input.file_path) ?? null;
+    if (path) return [{ path, kind: toolName }];
+    const e = editFromTool(toolName, toolInput);
+    return e ? [e] : [];
+  },
+  block(message) {
+    return { exit: 2, stderr: message };
+  }
+};
+function runDshHook(event, raw) {
+  return runHook(dshAdapter, event, raw);
+}
+
 // src/hook.ts
 try {
   const enable = nodeModule.enableCompileCache;
@@ -3974,6 +4026,7 @@ async function main() {
   try {
     if (harness === "claude") emit(runClaudeHook(event, payload));
     if (harness === "codex") emit(runCodexHook(event, payload));
+    if (harness === "dsh") emit(runDshHook(event, payload));
     emit({ exit: 0 });
   } catch (err) {
     recordError(`${harness}:${event}`, err);

@@ -131,7 +131,8 @@ interface Ctx {
 }
 
 function preToolUse({ adapter, input, cwd, config, root, agent, dir }: Ctx): HookOutcome {
-  if (str(input.tool_name) !== "Bash") return { exit: 0 };
+  const toolName = str(input.tool_name);
+  if (toolName !== "Bash" && toolName !== "bash") return { exit: 0 };
   const toolInput = obj(input.tool_input);
   const command = str(toolInput.command);
   if (!command) return { exit: 0 };
