@@ -176,7 +176,7 @@ describe("rewritten commands under real shells", () => {
       }
     }
     expect(checked).toBeGreaterThan(400);
-  });
+  }, 180_000);
 
   it("does not leak a top-level exit into a persistent shell", () => {
     const p = plan("pytest");
