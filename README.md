@@ -47,15 +47,18 @@ The same category is blocked at most once per turn. A second stop is allowed and
 
 ## Install
 
-Until the first npm release:
+Until the first npm release, build from source and register the hooks:
 
 ```sh
 git clone https://github.com/pavangupta352/stalegreen
 cd stalegreen && npm install && npm run build
-node dist/cli.js --help
+node dist/cli.js install --claude
+node dist/cli.js doctor
 ```
 
-Hook registration for Claude Code (`stalegreen install --claude`) and the plugin manifests are next on the list; see the changelog.
+`install --claude` copies the compiled hook to `~/.stalegreen/bin/hook.js` and registers PreToolUse, PostToolUse, Stop and SubagentStop in `~/.claude/settings.json` (add `--project` for the repository's `.claude/settings.json`, `--advisory` to record verdicts without blocking). `uninstall --claude` removes them. The plugin manifests for `/plugin marketplace add` are next; see the changelog.
+
+Permissions stay yours: the hook returns an `allow` decision for a wrapped command only when your own permission rules already allow the original one, so it never widens what Claude Code may run. Set `"permission": "allow"` in the config to skip prompts for every verification run, or `"ask"` to never return a decision.
 
 ## How freshness is decided
 

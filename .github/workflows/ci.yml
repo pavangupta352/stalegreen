@@ -50,6 +50,9 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      # A commit that adds hundreds of fixtures makes git print a rename-detection
+      # warning on stderr, which gitleaks treats as a scan failure.
+      - run: git config --global diff.renameLimit 100000
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

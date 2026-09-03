@@ -21,3 +21,16 @@ Keep a Changelog, and the project uses semantic versioning.
   claim when its evidence is stale, failed or masked, with a loop guard so a
   claim is blocked at most once per turn.
 - `stalegreen check`, `stalegreen receipt` and `stalegreen doctor`.
+- The unmask rewrite: the PreToolUse hook wraps verification commands in
+  POSIX sh so the full output is logged, the tail is shown, an explicit
+  `[stalegreen] exit=<code> receipt=<id>` marker is printed and the exit
+  status is preserved. Filter pipes such as `| tail -5` and `| grep` are
+  dropped, `tee` targets are kept, and heredocs, backgrounding, process
+  substitution, `sudo`, nested shells, redirects and watch modes are left
+  untouched. Tested against 210 commands under sh, bash and zsh.
+- Permission-aware rewriting: the hook returns `permissionDecision: "allow"`
+  only when the user's own Claude Code rules already allow the original
+  command, so wrapping never widens permissions (`permission` setting:
+  `inherit`, `allow` or `ask`).
+- `stalegreen install --claude` and `uninstall --claude`, with `--project`
+  and `--advisory`; `doctor` reports the registered hooks.
