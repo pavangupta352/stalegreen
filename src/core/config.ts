@@ -33,6 +33,13 @@ export interface Config {
   deferredTtlMinutes: number;
   /** Bytes kept per run log before truncation. */
   maxLogBytes: number;
+  /**
+   * How the PreToolUse hook treats permissions for a rewritten command.
+   * `inherit` returns allow only when the user's own rules already allow the
+   * original command; `allow` always returns allow for wrapped verification
+   * runs; `ask` never returns a decision.
+   */
+  permission: "inherit" | "allow" | "ask";
 }
 
 export const DEFAULT_FINGERPRINT_IGNORE = [
@@ -70,6 +77,7 @@ export const DEFAULT_CONFIG: Config = {
   fingerprintBudgetMs: 150,
   deferredTtlMinutes: 10,
   maxLogBytes: 5 * 1024 * 1024,
+  permission: "inherit",
 };
 
 /** The stalegreen home directory: `$STALEGREEN_HOME` or `~/.stalegreen`. */
@@ -135,6 +143,8 @@ function merge(base: Config, layer: Record<string, unknown> | null): Config {
   if (typeof layer.fingerprintBudgetMs === "number" && layer.fingerprintBudgetMs >= 10) out.fingerprintBudgetMs = Math.floor(layer.fingerprintBudgetMs);
   if (typeof layer.deferredTtlMinutes === "number" && layer.deferredTtlMinutes >= 0) out.deferredTtlMinutes = layer.deferredTtlMinutes;
   if (typeof layer.maxLogBytes === "number" && layer.maxLogBytes >= 1024) out.maxLogBytes = Math.floor(layer.maxLogBytes);
+  const permission = str("permission", ["inherit", "allow", "ask"]);
+  if (permission) out.permission = permission as Config["permission"];
   return out;
 }
 

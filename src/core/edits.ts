@@ -107,7 +107,7 @@ function segmentEdits(seg: Segment): EditCandidate[] {
   for (const r of seg.redirects) {
     if ((r.op === ">" || r.op === ">>" || r.op === "&>" || r.op === "&>>" || r.op === ">|") && (r.fd === null || r.fd === 1)) {
       if (r.target === "/dev/null" || r.target === "/dev/stderr" || r.target === "/dev/stdout" || /^&\d$/.test(r.target)) continue;
-      if (/\.stalegreen\//.test(r.target)) continue;
+      if (/\.stalegreen\//.test(r.target) || r.target.startsWith("$__sg_")) continue;
       out.push({ path: r.target, kind: "redirect" });
     }
   }
@@ -122,7 +122,7 @@ function segmentEdits(seg: Segment): EditCandidate[] {
     out.push({ path: lastPositional(words), kind: "perl" });
   } else if (w0 === "tee") {
     const path = lastPositional(words);
-    if (path && path !== "/dev/null" && !/\.stalegreen\//.test(path)) out.push({ path, kind: "tee" });
+    if (path && path !== "/dev/null" && !/\.stalegreen\//.test(path) && !path.startsWith("$__sg_")) out.push({ path, kind: "tee" });
   } else if (w0 === "mv" || w0 === "cp" || w0 === "rsync" || w0 === "install") {
     out.push({ path: lastPositional(words), kind: w0 });
   } else if (w0 === "rm" || w0 === "unlink" || w0 === "truncate" || w0 === "touch" || w0 === "ln") {

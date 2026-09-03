@@ -1,10 +1,11 @@
-import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runClaudeHook } from "../src/harness/claude/hooks.js";
 import { readReceipts, readVerdicts, readEdits, readDeferred } from "../src/core/receipts.js";
-import { deriveSession, sessionDir } from "../src/core/store.js";
+import { deriveSession, readJsonl, sessionDir } from "../src/core/store.js";
 import { loadHookFixture, makeHome, makeRepo, readFixture, type TempRepo } from "./helpers.js";
 
 let repo: TempRepo;
@@ -235,6 +236,95 @@ describe("freshness gate end to end", () => {
     expect(runClaudeHook("Stop", { last_assistant_message: 12 }).exit).toBe(0);
     expect(runClaudeHook("Nope", {}).exit).toBe(0);
     expect(runClaudeHook("Stop", null).exit).toBe(0);
+  });
+});
+
+describe("PreToolUse rewrite", () => {
+  function pre(command: string, overrides: Record<string, unknown> = {}) {
+    return runClaudeHook("PreToolUse", payload("PreToolUse-bash.json", { tool_input: { command, description: "Run", timeout: 120000 }, ...overrides }));
+  }
+  function output(r: { stdout?: string }): { hookSpecificOutput: Record<string, unknown> } {
+    return JSON.parse(r.stdout ?? "{}") as { hookSpecificOutput: Record<string, unknown> };
+  }
+
+  it("returns updatedInput with the wrapped command and keeps the other input fields", () => {
+    const r = pre("pnpm test | tail -5");
+    expect(r.exit).toBe(0);
+    const out = output(r).hookSpecificOutput;
+    expect(out.hookEventName).toBe("PreToolUse");
+    const updated = out.updatedInput as Record<string, unknown>;
+    expect(updated.description).toBe("Run");
+    expect(updated.timeout).toBe(120000);
+    expect(updated.command).toContain("{ pnpm test ; }");
+    expect(updated.command).not.toContain("| tail");
+    expect(updated.command).toContain("receipt=r-0001");
+    expect(out.permissionDecision).toBeUndefined();
+    const pending = readJsonl<{ id: string; wrappedCommand: string | null }>(join(sessionDir(SESSION), "pending.jsonl"));
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({ id: "r-0001" });
+    expect(pending[0]?.wrappedCommand).toBe(updated.command);
+  });
+
+  it("leaves non-runners, watch modes, background runs and mode off alone", () => {
+    expect(pre("git status").stdout).toBeUndefined();
+    expect(pre("npx vitest --watch").stdout).toBeUndefined();
+    expect(pre("pnpm test", { tool_input: { command: "pnpm test", run_in_background: true } }).stdout).toBeUndefined();
+    writeFileSync(join(repo.dir, ".stalegreen.json"), JSON.stringify({ mode: "off" }));
+    expect(pre("pnpm test").stdout).toBeUndefined();
+  });
+
+  it("does not wrap what it cannot wrap safely, and denies masked ones in strict mode", () => {
+    expect(pre("pytest > out.log 2>&1").stdout).toBeUndefined();
+    const pending = readJsonl<{ unwrapped?: string }>(join(sessionDir(SESSION), "pending.jsonl"));
+    expect(pending[0]?.unwrapped).toBe("redirect:out.log");
+    writeFileSync(join(repo.dir, ".stalegreen.json"), JSON.stringify({ mode: "strict" }));
+    expect(pre("sudo pytest").stdout).toBeUndefined();
+    const denied = output(pre("sudo pytest | tail -3")).hookSpecificOutput;
+    expect(denied.permissionDecision).toBe("deny");
+    expect(denied.permissionDecisionReason).toMatch(/without the pipe/);
+  });
+
+  it("returns allow only when the user's own rules already allow the original command", () => {
+    const cfg = mkdtempSync(join(tmpdir(), "stalegreen-claude-"));
+    const previous = process.env.CLAUDE_CONFIG_DIR;
+    process.env.CLAUDE_CONFIG_DIR = cfg;
+    try {
+      expect(output(pre("pnpm test")).hookSpecificOutput.permissionDecision).toBeUndefined();
+      writeFileSync(join(cfg, "settings.json"), JSON.stringify({ permissions: { allow: ["Bash(pnpm test *)"] } }));
+      const allowed = output(pre("pnpm test | tail -5")).hookSpecificOutput;
+      expect(allowed.permissionDecision).toBe("allow");
+      expect(allowed.permissionDecisionReason).toMatch(/allowed by your permission rules/);
+      expect(output(pre("pnpm test && rm -rf build")).hookSpecificOutput.permissionDecision).toBeUndefined();
+      expect(output(pre("pnpm test", { permission_mode: "bypassPermissions" })).hookSpecificOutput.permissionDecision).toBeUndefined();
+      expect(output(pre("pnpm test", { permission_mode: "plan" })).hookSpecificOutput.permissionDecision).toBeUndefined();
+      writeFileSync(join(repo.dir, ".stalegreen.json"), JSON.stringify({ permission: "allow" }));
+      expect(output(pre("npx vitest run")).hookSpecificOutput.permissionDecision).toBe("allow");
+      writeFileSync(join(repo.dir, ".stalegreen.json"), JSON.stringify({ permission: "ask" }));
+      expect(output(pre("pnpm test")).hookSpecificOutput.permissionDecision).toBeUndefined();
+    } finally {
+      if (previous === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+      else process.env.CLAUDE_CONFIG_DIR = previous;
+      rmSync(cfg, { recursive: true, force: true });
+    }
+  });
+
+  it("round-trips a wrapped run through a real shell into a receipt with the true exit status", () => {
+    const bin = join(repo.dir, "bin");
+    mkdirSync(bin);
+    writeFileSync(join(bin, "pytest"), "#!/bin/sh\necho 'collected 41 items'\necho '========= 1 failed, 40 passed in 2.44s ========='\nexit 1\n");
+    chmodSync(join(bin, "pytest"), 0o755);
+    const wrapped = (output(pre("pytest -q 2>&1 | tail -3")).hookSpecificOutput.updatedInput as { command: string }).command;
+    const r = spawnSync("sh", ["-c", wrapped], { cwd: repo.dir, env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ""}` }, encoding: "utf8" });
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain("[stalegreen] exit=1 receipt=r-0001");
+    runClaudeHook("PostToolUse", bashDone(wrapped, r.stdout, r.status));
+    const receipt = readReceipts(SESSION)[0]!;
+    expect(receipt).toMatchObject({ id: "r-0001", wrapped: true, masked: false, exit: 1, verdict: "fail", runner: "pytest", cmd: "pytest -q 2>&1", counts: { failed: 1, passed: 40 } });
+    expect(readFileSync(receipt.log!, "utf8")).toContain("collected 41 items");
+    expect(readEdits(SESSION)).toEqual([]);
+    const stop = runClaudeHook("Stop", stopWith("All tests pass."));
+    expect(stop.exit).toBe(2);
+    expect(stop.stderr).toContain("r-0001");
   });
 });
 

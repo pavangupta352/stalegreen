@@ -11,9 +11,13 @@ import { editFromTool, editsFromBash, toEditEvent } from "../../core/edits.js";
 import { computeFingerprint } from "../../core/fingerprint.js";
 import { evaluate, formatBlockMessage } from "../../core/freshness.js";
 import type { Category, Fingerprint, Receipt } from "../../core/grammar.js";
-import { parseOutput } from "../../core/runners.js";
-import { detectRuns, MARKER_RE, readDeferred, readEdits, readReceipts, recordRun, type DeferredRun, type PendingRun, type VerdictRecord } from "../../core/receipts.js";
+import { analyzeMasking } from "../../core/masking.js";
+import { parseOutput, type Detection } from "../../core/runners.js";
+import { detectRuns, MARKER_RE, readDeferred, readEdits, readReceipts, recordRun, runLogPath, type DeferredRun, type PendingRun, type VerdictRecord } from "../../core/receipts.js";
+import { planRewrite, unfilteredCommand, type RewriteTarget } from "../../core/rewrite.js";
+import { parseCommand } from "../../core/shell.js";
 import { appendJsonl, deriveSession, ensureDir, nextReceiptId, readJsonFile, sessionDir, writeJsonFile } from "../../core/store.js";
+import { commandAllowedByRules, loadPermissionRules } from "./permissions.js";
 
 export interface HookOutcome {
   exit: number;
@@ -70,27 +74,50 @@ function preToolUse(input: Input, cwd: string, config: Config, root: string, age
   const toolInput = obj(input.tool_input);
   const command = str(toolInput.command);
   if (!command) return { exit: 0 };
-  const detections = detectRuns(command, config).filter((d) => d.notRun === null);
+  const parsed = parseCommand(command);
+  const detections = detectRuns(command, config, parsed).filter((d) => d.notRun === null);
   if (detections.length === 0) return { exit: 0 };
-  const d = detections[0]!;
   ensureDir(dir);
-  const pending: PendingRun = {
-    id: nextReceiptId(dir),
-    ts: nowIso(),
-    toolUseId: str(input.tool_use_id),
-    command,
-    wrappedCommand: null,
-    cwd,
-    runner: d.runner,
-    category: d.category,
-    scope: d.scope,
-    cd: d.cd,
-    background: toolInput.run_in_background === true,
-    agent,
-    log: null,
+  const ts = nowIso();
+  const background = toolInput.run_in_background === true;
+  const record = (d: Detection, id: string, wrappedCommand: string | null, unwrapped: string | null, log: string | null): PendingRun => {
+    const p: PendingRun = { id, ts, toolUseId: str(input.tool_use_id), command, wrappedCommand, cwd, runner: d.runner, category: d.category, scope: d.scope, cd: d.cd, background, agent, log };
+    if (unwrapped) p.unwrapped = unwrapped;
+    appendJsonl(join(dir, "pending.jsonl"), p);
+    return p;
   };
-  appendJsonl(join(dir, "pending.jsonl"), pending);
-  return { exit: 0 };
+  if (config.mode === "off" || background) {
+    record(detections[0]!, nextReceiptId(dir), null, config.mode === "off" ? "mode-off" : "background", null);
+    return { exit: 0 };
+  }
+  const targets: RewriteTarget[] = detections.map((d) => {
+    const id = nextReceiptId(dir);
+    return { detection: d, id, log: runLogPath(root, id) };
+  });
+  const plan = planRewrite(command, targets, config, parsed);
+  if (!plan.command) {
+    record(detections[0]!, targets[0]!.id, null, plan.reason, null);
+    if (config.mode === "strict") {
+      const analysis = analyzeMasking(parsed, detections[0]!.segmentIndex);
+      if (analysis.masked && !analysis.exitPreserved) {
+        const reason = `stalegreen: \`${detections[0]!.segment.head}\` is piped or chained so its result would not be recorded, and it cannot be wrapped (${plan.reason}). Run it without the pipe or suffix so the result is recorded.`;
+        return { exit: 0, stdout: JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason } }) };
+      }
+    }
+    return { exit: 0 };
+  }
+  for (const t of targets) record(t.detection, t.id, plan.command, null, t.log);
+  const hookSpecificOutput: Record<string, unknown> = { hookEventName: "PreToolUse", updatedInput: { ...toolInput, command: plan.command } };
+  const mode = str(input.permission_mode) ?? "default";
+  const promptFree = mode === "bypassPermissions" || mode === "auto";
+  if (!promptFree && mode !== "plan") {
+    const allowed = config.permission === "allow" || (config.permission === "inherit" && commandAllowedByRules(unfilteredCommand(command, targets, parsed), loadPermissionRules(cwd)));
+    if (allowed) {
+      hookSpecificOutput.permissionDecision = "allow";
+      hookSpecificOutput.permissionDecisionReason = `stalegreen: \`${detections[0]!.segment.head}\` is ${config.permission === "allow" ? "a verification run" : "allowed by your permission rules"}; wrapped so its result is recorded`;
+    }
+  }
+  return { exit: 0, stdout: JSON.stringify({ hookSpecificOutput }) };
 }
 
 function postToolUse(input: Input, cwd: string, config: Config, root: string, agent: string | null, dir: string): HookOutcome {

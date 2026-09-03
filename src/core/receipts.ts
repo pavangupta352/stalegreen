@@ -69,7 +69,15 @@ export interface ReceiptContext {
   now?: string;
 }
 
-export const MARKER_RE = /\[stalegreen\] exit=(-?\d+) receipt=(r-[\w-]+)(?: lines=(\d+))?(?: log=(\S+))?/;
+export const MARKER_RE = /\[stalegreen\] exit=(-?\d+) receipt=([\w-]+)(?: lines=(\d+))?(?: log=(\S+))?/;
+const MARKER_RE_ALL = new RegExp(MARKER_RE.source, "g");
+
+/** Every marker line in a command's output, in order. */
+export function findMarkers(text: string): { exit: number; id: string; log: string | null }[] {
+  const out: { exit: number; id: string; log: string | null }[] = [];
+  for (const m of text.matchAll(MARKER_RE_ALL)) out.push({ exit: Number(m[1]), id: m[2] as string, log: m[4] ?? null });
+  return out;
+}
 
 export function runLogPath(root: string, id: string): string {
   return join(sessionDir(root), "runs", `${id}.log`);
@@ -183,10 +191,10 @@ export interface BuiltReceipt {
  * Builds receipts for a finished command. Pure apart from the fingerprint.
  * Ids are placeholders (`r-?`) until `recordRun` assigns them.
  */
-export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: PendingRun | null): BuiltReceipt[] {
+export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: PendingRun | null, pendingAll: PendingRun[] = pending ? [pending] : []): BuiltReceipt[] {
   const now = ctx.now ?? new Date().toISOString();
   const combined = `${input.stdout ?? ""}${input.stderr ? `\n${input.stderr}` : ""}`;
-  const marker = MARKER_RE.exec(combined);
+  const markers = findMarkers(combined);
   const fingerprints = new Map<string, Fingerprint>();
   const fingerprintFor = (cwd: string): Fingerprint => {
     let f = fingerprints.get(cwd);
@@ -220,39 +228,42 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
     ...extra,
   });
 
-  if (marker) {
-    // The wrapped path: the exit status came through the marker and the full output is on disk.
-    const id = marker[2] as string;
-    const exit = Number(marker[1]);
-    const logPath = marker[4] ?? runLogPath(ctx.root, id);
-    const output = readLog(logPath, ctx.config.maxLogBytes) ?? combined;
-    const source = pending?.command ?? input.command;
-    const detections = detectRuns(source, ctx.config);
-    const d = detections.find((x) => x.notRun === null) ?? detections[0] ?? null;
-    const cwd = resolve(input.cwd, pending?.cd ?? d?.cd ?? ".");
-    const category = pending?.category ?? d?.category ?? "test";
-    const parsed = parseOutput(category, output, { exit, interrupted: input.interrupted });
-    const extra = extraVerdict(ctx.config, pending?.runner ?? d?.runner ?? "", output, exit);
-    const receipt = base(d, {
-      id,
-      cwd,
-      cmd: d?.segment.head ?? pending?.command ?? input.command,
-      source,
-      runner: pending?.runner ?? d?.runner ?? "unknown",
-      category,
-      scope: pending?.scope ?? d?.scope ?? "all",
-      exit,
-      verdict: extra?.verdict ?? parsed.verdict,
-      counts: parsed.counts,
-      signal: extra?.signal ?? parsed.signal,
-      masked: false,
-      wrapped: true,
-      ...(d?.quiet ? { quiet: true } : {}),
-      ...(input.interrupted ? { interrupted: true } : {}),
-      fingerprint: fingerprintFor(cwd),
-      log: logPath,
-    });
-    return [{ receipt, output }];
+  if (markers.length > 0) {
+    // The wrapped path: each marker carries the exit status and the full output is on disk.
+    const out: BuiltReceipt[] = [];
+    for (const marker of markers) {
+      const p = pendingAll.find((x) => x.id === marker.id) ?? (pending?.id === marker.id ? pending : null);
+      const logPath = marker.log ?? p?.log ?? runLogPath(ctx.root, marker.id);
+      const output = readLog(logPath, ctx.config.maxLogBytes) ?? combined;
+      const source = p?.command ?? input.command;
+      const detections = detectRuns(source, ctx.config);
+      const d = (p ? detections.find((x) => x.notRun === null && x.runner === p.runner) : null) ?? detections.find((x) => x.notRun === null) ?? detections[0] ?? null;
+      const cwd = resolve(input.cwd, p?.cd ?? d?.cd ?? ".");
+      const category = p?.category ?? d?.category ?? "test";
+      const parsed = parseOutput(category, output, { exit: marker.exit, interrupted: input.interrupted });
+      const extra = extraVerdict(ctx.config, p?.runner ?? d?.runner ?? "", output, marker.exit);
+      const receipt = base(d, {
+        id: marker.id,
+        cwd,
+        cmd: d?.segment.head ?? p?.command ?? input.command,
+        source,
+        runner: p?.runner ?? d?.runner ?? "unknown",
+        category,
+        scope: p?.scope ?? d?.scope ?? "all",
+        exit: marker.exit,
+        verdict: extra?.verdict ?? parsed.verdict,
+        counts: parsed.counts,
+        signal: extra?.signal ?? parsed.signal,
+        masked: false,
+        wrapped: true,
+        ...(d?.quiet ? { quiet: true } : {}),
+        ...(input.interrupted ? { interrupted: true } : {}),
+        fingerprint: fingerprintFor(cwd),
+        log: logPath,
+      });
+      out.push({ receipt, output });
+    }
+    return out;
   }
 
   const parsedCommand = parseCommand(input.command);
@@ -311,12 +322,13 @@ export function recordRun(input: RunInput, ctx: ReceiptContext): Receipt[] {
   ensureDir(dir);
   const pendingAll = readPending(ctx.root);
   const combined = `${input.stdout ?? ""}\n${input.stderr ?? ""}`;
-  const marker = MARKER_RE.exec(combined);
+  const markers = findMarkers(combined);
+  const marker = markers[0] ?? null;
   let pending: PendingRun | null = null;
-  if (marker) pending = pendingAll.find((p) => p.id === marker[2]) ?? null;
+  if (marker) pending = pendingAll.find((p) => p.id === marker.id) ?? null;
   else if (input.toolUseId) pending = pendingAll.filter((p) => p.toolUseId === input.toolUseId).pop() ?? null;
   else pending = pendingAll.filter((p) => p.command === input.command && !p.wrappedCommand).pop() ?? null;
-  const built = buildReceipts(input, ctx, pending);
+  const built = buildReceipts(input, ctx, pending, pendingAll);
   const receipts: Receipt[] = [];
   built.forEach((b, i) => {
     const r = b.receipt;
