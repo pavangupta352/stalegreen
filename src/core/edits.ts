@@ -65,6 +65,20 @@ const FORMATTERS: { name: string; check: RegExp | null }[] = [
 /** Calls inside a heredoc script that change files on disk. */
 const HEREDOC_WRITE_RE = /\bopen\([^)]*['"][wax][bt+]*['"]|\.write_text\(|\.write_bytes\(|writeFileSync\(|writeFile\(|appendFileSync\(|fs\.write|\bshutil\.(?:copy|move|rmtree)|os\.(?:rename|remove|unlink|replace|makedirs|mkdir)|Path\([^)]*\)\.(?:unlink|rename|touch|mkdir)|File\.(?:write|open\([^)]*['"][wa])|IO\.write|fs\.rm|rmSync\(|renameSync\(|copyFileSync\(|mkdirSync\(|subprocess\.(?:run|call|check_output)\([^)]*(?:sed|mv|cp|rm|git)\b|\bsed -i\b|\bmv \b|\bcp \b|\brm \b/;
 
+/** File paths named as string literals inside a heredoc script, at most eight. */
+function heredocPaths(command: string): string[] {
+  const body = command.slice(command.indexOf("<<"));
+  const out = new Set<string>();
+  for (const m of body.matchAll(/['"]([^'"\n]{2,200}?\.[A-Za-z0-9]{1,6})['"]/g)) {
+    const p = m[1] as string;
+    if (/\s{2,}|[{}<>|*?]/.test(p)) continue;
+    if (/^(?:https?:|mailto:|www\.)/i.test(p)) continue;
+    out.add(p);
+    if (out.size >= 8) break;
+  }
+  return [...out];
+}
+
 function lastPositional(words: string[]): string | null {
   for (let i = words.length - 1; i >= 1; i--) {
     const w = words[i] as string;
@@ -105,18 +119,27 @@ function formatterEdit(words: string[]): EditCandidate | null {
   return null;
 }
 
-/** Decides from a git command's output whether the working tree actually changed. */
+/**
+ * Decides from a git command's output whether the working tree actually
+ * changed. Silence (a `-q` pull or checkout) proves nothing either way, and
+ * the live gate has the fingerprint, so silence does not count as an edit.
+ */
 function gitChangedTree(sub: string, words: string[], output: string): boolean {
-  if (!output) return true;
+  const quiet = output.trim().length === 0;
   if (sub === "pull" || sub === "merge" || sub === "rebase" || sub === "cherry-pick" || sub === "revert" || sub === "am") {
-    return !/Already up[ -]to[ -]date|is up to date\.|nothing to commit|No changes|error: |CONFLICT \(|fatal: /i.test(output) || /Fast-forward|Updating [0-9a-f]+\.\.[0-9a-f]+|Merge made|Successfully rebased|files? changed|\| \d+ [+-]/.test(output);
+    if (quiet) return false;
+    // A compound command can also carry a remote pull's output; a local "already up to date" wins.
+    if (/Already up[ -]to[ -]date|is up to date\.|nothing to commit|No changes|error: |CONFLICT \(|fatal: /i.test(output)) return false;
+    return /Fast-forward|Updating [0-9a-f]+\.\.[0-9a-f]+|Merge made|Successfully rebased|files? changed|\| \d+ [+-]|create mode|delete mode/.test(output);
   }
   if (sub === "checkout" || sub === "switch") {
     if (words.includes("--")) return true;
+    if (quiet) return false;
     if (/Already on '|fatal: |error: /.test(output)) return false;
-    return true;
+    return /Switched to (?:a new )?branch|HEAD is now at|Updated \d+ paths?|Reset branch/.test(output);
   }
   if (sub === "stash") {
+    if (quiet) return false;
     if (/No local changes to save|No stash entries found|fatal: /.test(output)) return false;
     return true;
   }
@@ -170,9 +193,21 @@ function segmentEdits(seg: Segment, output = ""): EditCandidate[] {
     // handled by stripWrappers above; a bare npx never reaches here
   } else {
     const f = formatterEdit(words);
-    if (f) out.push(f);
+    if (f && formatterChangedFiles(w0, words, output)) out.push(f);
   }
   return out;
+}
+
+/** Formatters that report what they changed: no edit when they report nothing changed. */
+function formatterChangedFiles(tool: string, words: string[], output: string): boolean {
+  if (!output) return true;
+  if (tool === "ruff") {
+    if (words[1] === "format") return /[1-9]\d* files? reformatted/.test(output) || !/files? (?:already formatted|left unchanged)/.test(output);
+    return /Fixed [1-9]\d* errors?|\([1-9]\d* fixed/.test(output) || !/(?:All checks passed!|Found \d+ errors?\.?\s*$)/m.test(output);
+  }
+  if (tool === "black") return /^reformatted |[1-9]\d* files? reformatted/m.test(output) || !/files? would be left unchanged|files? left unchanged/.test(output);
+  if (tool === "prettier") return !/^\S+ \d+ms \(unchanged\)/m.test(output) || /^\S+ \d+ms$/m.test(output);
+  return true;
 }
 
 /**
@@ -188,9 +223,14 @@ export function editsFromBash(command: string, output = ""): EditCandidate[] {
     out.push(...segmentEdits(seg, output));
   }
   if (parsed.heredoc && out.length === 0) {
-    // A heredoc feeding an interpreter can write anywhere; count it only when the script visibly writes.
+    // A heredoc feeding an interpreter can write anywhere; count it only when the script visibly writes,
+    // and name the files it mentions so documentation edits can be told apart from code edits.
     const feeds = parsed.segments.some((s) => s.redirects.some((r) => r.op.startsWith("<<")) && /^(?:python[0-9.]*|node|ruby|perl|php|sh|bash|zsh)$/.test((s.words[0] ?? "").replace(/^.*\//, "")));
-    if (feeds && HEREDOC_WRITE_RE.test(command)) out.push({ path: null, kind: "heredoc" });
+    if (feeds && HEREDOC_WRITE_RE.test(command)) {
+      const paths = heredocPaths(command);
+      if (paths.length === 0) out.push({ path: null, kind: "heredoc" });
+      else for (const p of paths) out.push({ path: p, kind: "heredoc" });
+    }
   }
   // Deduplicate identical events.
   const seen = new Set<string>();

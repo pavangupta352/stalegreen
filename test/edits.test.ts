@@ -16,21 +16,21 @@ describe("editsFromBash", () => {
     ["rm -rf build", ["rm:build"]],
     ["touch src/new.ts", ["touch:src/new.ts"]],
     ["git checkout -- src/x.ts", ["git checkout:src/x.ts"]],
-    ["git checkout main", ["git checkout:"]],
+    ["git checkout main", []],
     ["git checkout -b feature/x", []],
     ["git switch -c feature/x", []],
     ["git reset --hard HEAD~1", ["git reset:"]],
     ["git reset HEAD~1", []],
     ["git reset -- src/x.ts", ["git reset:src/x.ts"]],
-    ["git stash", ["git stash:"]],
+    ["git stash", []],
     ["git stash list", []],
-    ["git merge origin/main", ["git merge:"]],
-    ["git rebase main", ["git rebase:"]],
-    ["git cherry-pick abc123", ["git cherry-pick:"]],
+    ["git merge origin/main", []],
+    ["git rebase main", []],
+    ["git cherry-pick abc123", []],
     ["git apply fix.patch", ["git apply:"]],
     ["git reset --hard HEAD~1", ["git reset:"]],
-    ["git pull", ["git pull:"]],
-    ["git clean -fd", ["git clean:"]],
+    ["git pull", []],
+    ["git clean -fd", []],
     ["git clean -n", []],
     ["git commit -m 'wip'", []],
     ["git add -A", []],
@@ -94,10 +94,53 @@ describe("editsFromBash with output", () => {
     expect(kinds("git stash", "No local changes to save\n")).toEqual([]);
     expect(kinds("git stash", "Saved working directory and index state WIP on main: 1a2b3c4 wip\n")).toEqual(["git stash"]);
     expect(kinds("git apply fix.patch", "error: patch failed: src/a.ts:1\nerror: src/a.ts: patch does not apply\n")).toEqual([]);
-    expect(kinds("git clean -fd", "")).toEqual(["git clean"]);
+    expect(kinds("git clean -fd", "")).toEqual([]);
     expect(kinds("git clean -fd", "Removing build/\n")).toEqual(["git clean"]);
     expect(kinds("git rebase main", "Current branch feature is up to date.\n")).toEqual([]);
     expect(kinds("git rebase main", "Successfully rebased and updated refs/heads/feature.\n")).toEqual(["git rebase"]);
+    // Quiet operations prove nothing either way; the live gate has the fingerprint.
+    expect(kinds("git checkout -q main && git pull -q", "")).toEqual([]);
+    expect(kinds("git pull", "")).toEqual([]);
+    expect(kinds("git checkout -- src/a.ts", "")).toEqual(["git checkout"]);
+    expect(kinds("git reset --hard HEAD~1", "")).toEqual(["git reset"]);
+  });
+
+  it("counts formatters only when they report changed files", () => {
+    const kinds = (cmd: string, out: string) => editsFromBash(cmd, out).map((e) => e.kind);
+    expect(kinds("ruff format src", "24 files already formatted\n")).toEqual([]);
+    expect(kinds("ruff format src", "1 file reformatted, 23 files left unchanged\n")).toEqual(["format"]);
+    expect(kinds("ruff check --fix src", "Found 3 errors (3 fixed, 0 remaining).\n")).toEqual(["format"]);
+    expect(kinds("ruff check --fix src", "All checks passed!\n")).toEqual([]);
+    expect(kinds("black .", "All done! ✨ 🍰 ✨\n24 files left unchanged.\n")).toEqual([]);
+    expect(kinds("black .", "reformatted src/a.py\nAll done! ✨ 🍰 ✨\n1 file reformatted, 23 files left unchanged.\n")).toEqual(["format"]);
+    expect(kinds("npx prettier --write src", "src/a.ts 12ms (unchanged)\nsrc/b.ts 8ms (unchanged)\n")).toEqual([]);
+    expect(kinds("npx prettier --write src", "src/a.ts 12ms\nsrc/b.ts 8ms (unchanged)\n")).toEqual(["format"]);
+  });
+
+  it("names the files a heredoc script writes", () => {
+    const edits = editsFromBash("python3 - <<'PY'\nimport pathlib\np = pathlib.Path('README.md'); s = p.read_text()\np.write_text(s.replace('a', 'b'))\nPY");
+    expect(edits).toEqual([{ path: "README.md", kind: "heredoc" }]);
+    const two = editsFromBash("python3 - <<'PY'\np = 'src/app/page.tsx'\ns = open(p).read()\nopen(p, 'w').write(s)\nopen('tests/page.test.ts', 'w').write('x')\nPY");
+    expect(two.map((e) => e.path)).toEqual(["src/app/page.tsx", "tests/page.test.ts"]);
+    const none = editsFromBash("node - <<'EOF'\nrequire('fs').writeFileSync(process.argv[2], '{}')\nEOF");
+    expect(none).toEqual([{ path: null, kind: "heredoc" }]);
+  });
+});
+
+describe("affectsVerification", () => {
+  it("ignores scratch, temp and note paths but keeps code", async () => {
+    const { affectsVerification } = await import("../src/core/freshness.js");
+    const ignore = () => false;
+    expect(affectsVerification("/private/tmp/claude-501/x/scratchpad/q2.sql", ignore)).toBe(false);
+    expect(affectsVerification("/tmp/probe.ts", ignore)).toBe(false);
+    expect(affectsVerification("/Users/dev/.claude/projects/x/memory/notes.md", ignore)).toBe(false);
+    expect(affectsVerification("/Users/dev/app/src/lib/hold.ts", ignore)).toBe(true);
+    expect(affectsVerification("Makefile", ignore)).toBe(true);
+    expect(affectsVerification(".eslintrc.json", ignore)).toBe(true);
+    expect(affectsVerification("rewa.apk", ignore)).toBe(false);
+    expect(affectsVerification("apk2", ignore)).toBe(false);
+    expect(affectsVerification("notes.out", ignore)).toBe(false);
+    expect(affectsVerification(null, ignore)).toBe(true);
   });
 });
 
