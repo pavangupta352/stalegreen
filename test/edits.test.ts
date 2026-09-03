@@ -81,6 +81,26 @@ describe("editsFromBash", () => {
   }
 });
 
+describe("editsFromBash with output", () => {
+  it("counts git operations only when the output shows the tree changed", () => {
+    const kinds = (cmd: string, out: string) => editsFromBash(cmd, out).map((e) => e.kind);
+    expect(kinds("git pull", "Already up to date.\n")).toEqual([]);
+    expect(kinds("git pull", "Updating 1a2b3c4..5d6e7f8\nFast-forward\n src/a.ts | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)\n")).toEqual(["git pull"]);
+    expect(kinds("git merge origin/main", "Already up to date.\n")).toEqual([]);
+    expect(kinds("git merge origin/main", "Merge made by the 'ort' strategy.\n")).toEqual(["git merge"]);
+    expect(kinds("git checkout main", "Already on 'main'\nYour branch is up to date with 'origin/main'.\n")).toEqual([]);
+    expect(kinds("git checkout main", "Switched to branch 'main'\n")).toEqual(["git checkout"]);
+    expect(kinds("git checkout main", "error: pathspec 'main' did not match any file(s) known to git\n")).toEqual([]);
+    expect(kinds("git stash", "No local changes to save\n")).toEqual([]);
+    expect(kinds("git stash", "Saved working directory and index state WIP on main: 1a2b3c4 wip\n")).toEqual(["git stash"]);
+    expect(kinds("git apply fix.patch", "error: patch failed: src/a.ts:1\nerror: src/a.ts: patch does not apply\n")).toEqual([]);
+    expect(kinds("git clean -fd", "")).toEqual(["git clean"]);
+    expect(kinds("git clean -fd", "Removing build/\n")).toEqual(["git clean"]);
+    expect(kinds("git rebase main", "Current branch feature is up to date.\n")).toEqual([]);
+    expect(kinds("git rebase main", "Successfully rebased and updated refs/heads/feature.\n")).toEqual(["git rebase"]);
+  });
+});
+
 describe("editFromTool", () => {
   it("records the four file tools and nothing else", () => {
     expect(editFromTool("Edit", { file_path: "/r/a.ts" })).toEqual({ path: "/r/a.ts", kind: "Edit" });

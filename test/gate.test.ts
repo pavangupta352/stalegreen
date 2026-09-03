@@ -156,6 +156,18 @@ describe("freshness gate end to end", () => {
     expect(readReceipts(SESSION)[9]).toMatchObject({ verdict: "inconclusive" });
   });
 
+  it("attributes the output of a compound command to its segments", () => {
+    const output = ["=== tsc ===", "", "> app@0.1.0 test", "> vitest run", "", " RUN  v3.2.7 /work/app", "", " Test Files  2 passed (2)", "      Tests  41 passed (41)", "   Duration  412ms", "=== lint ===", ""].join("\n");
+    runClaudeHook("PostToolUse", bashDone('echo "=== tsc ==="; npx tsc --noEmit 2>&1 | head -20; npm test 2>&1 | tail -5; echo "=== lint ==="; npx eslint . 2>&1 | head -20', output, 0));
+    const receipts = readReceipts(SESSION);
+    expect(receipts.map((r) => `${r.category}:${r.verdict}:${r.signal}`)).toEqual(["typecheck:pass:silent-through-pipe", "test:pass:summary-only:vitest-passed", "lint:pass:silent-through-pipe"]);
+    expect(receipts[1]?.counts).toEqual({ passed: 41, total: 41 });
+    expect(receipts[0]?.counts).toEqual({});
+    // Without anchors a segment cannot claim the shared output was empty.
+    runClaudeHook("PostToolUse", bashDone("npx tsc --noEmit 2>&1 | head -20; npx eslint . 2>&1 | tail -20", "src/a.ts:1:1  error  no-unused-vars\n\n✖ 1 problem (1 error, 0 warnings)\n", 0));
+    expect(readReceipts(SESSION).slice(3).map((r) => `${r.category}:${r.verdict}`)).toEqual(["typecheck:inconclusive", "lint:fail"]);
+  });
+
   it("uses a later read of a redirected log as the run's output", () => {
     runClaudeHook("PostToolUse", bashDone("npm test > /tmp/sg-test.out 2>&1; echo done", "done\n", 0));
     const first = readReceipts(SESSION)[0]!;

@@ -256,9 +256,7 @@ export async function readClaudeEvents(file: string, scope: Scope, opts: ReplayO
           pending.set(b.id, { name: b.name, input, ts });
           const edit = editFromTool(b.name, input);
           if (edit) events.push({ kind: "edit", ts, seq, path: edit.path, edit: edit.kind, scope, agent });
-          else if (b.name === "Bash" && typeof input.command === "string") {
-            for (const e of editsFromBash(input.command)) events.push({ kind: "edit", ts, seq, path: e.path, edit: e.kind, scope, agent });
-          }
+          // Bash edits are recorded when the result arrives, so git operations can be judged by their output.
         }
       }
     } else if (record.type === "user" && Array.isArray(content)) {
@@ -288,6 +286,7 @@ export async function readClaudeEvents(file: string, scope: Scope, opts: ReplayO
         }
         const cwd = typeof record.cwd === "string" ? record.cwd : "";
         events.push({ kind: "run", ts, seq, command, output: clipOutput(output, maxOutput), exit, interrupted, background, cwd, scope, toolUseId: b.tool_use_id, agent });
+        for (const e of editsFromBash(command, output)) events.push({ kind: "edit", ts, seq, path: e.path, edit: e.kind, scope, agent });
       }
     }
   }

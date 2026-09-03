@@ -150,7 +150,7 @@ function postToolUse(input: Input, cwd: string, config: Config, root: string, ag
         appendJsonl(join(dir, "receipts.jsonl"), read);
       }
     }
-    for (const e of editsFromBash(command)) appendJsonl(join(dir, "edits.jsonl"), toEditEvent(e, ts, agent));
+    for (const e of editsFromBash(command, `${stdout}\n${stderr}`)) appendJsonl(join(dir, "edits.jsonl"), toEditEvent(e, ts, agent));
     return { exit: 0 };
   }
   if (toolName === "TaskOutput" || toolName === "BashOutput") {

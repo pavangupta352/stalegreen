@@ -11,7 +11,7 @@ import { computeFingerprint } from "./fingerprint.js";
 import type { Category, Counts, EditEvent, Fingerprint, Harness, Receipt, RunScope, RunVerdict, Verdict } from "./grammar.js";
 import { analyzeMasking, type MaskAnalysis } from "./masking.js";
 import { detectAll, parseOutput, type Detection } from "./runners.js";
-import { parseCommand, type ParsedCommand } from "./shell.js";
+import { parseCommand, type ParsedCommand, type Segment } from "./shell.js";
 import { appendJsonl, ensureDir, nextReceiptId, readJsonl, sessionDir } from "./store.js";
 
 export interface PendingRun {
@@ -198,6 +198,89 @@ export interface BuiltReceipt {
   output: string;
 }
 
+/** Output lines a runner prints first, used to find where its output starts inside a compound command's output. */
+const RUNNER_HEADERS: [RegExp, RegExp][] = [
+  [/^vitest$/, /^\s*RUN\s+v\d/],
+  [/^pytest$/, /^=+ test session starts =+\s*$/],
+  [/^jest$/, /^(?:PASS|FAIL) \S/],
+  [/^next build$/, /^\s*▲ Next\.js/],
+  [/^vite build$/, /^vite v\d/],
+  [/^tsup$/, /^CLI Building entry/],
+  [/^cargo /, /^\s+(?:Compiling|Checking|Finished|Running|Downloading|Updating)\b/],
+  [/^go test$/, /^(?:ok|FAIL|\?)\s+\S+\s/],
+  [/^playwright test$/, /^Running \d+ tests? using/],
+  [/^mix test$/, /^Running ExUnit with seed/],
+  [/^rspec$/, /^(?:Randomized with seed|Run options)/],
+  [/^phpunit$/, /^PHPUnit \d/],
+  [/^dotnet /, /^\s*Determining projects to restore/],
+];
+
+/** Text an `echo` or `printf` segment prints, when it is literal. */
+function literalEcho(seg: Segment): string | null {
+  const w0 = seg.words[0];
+  if (w0 !== "echo" && w0 !== "printf") return null;
+  const args = seg.words.slice(1).filter((w) => !(w0 === "echo" && /^-[neE]+$/.test(w)));
+  if (args.length === 0) return null;
+  const text = w0 === "printf" ? (args[0] as string).replace(/\\n/g, "") : args.join(" ");
+  if (/[$`]/.test(text) || text.trim().length < 3) return null;
+  return text.trim();
+}
+
+/**
+ * Splits a compound command's output between its segments using anchors: the
+ * agent's own echo separators, package-manager script banners and the first
+ * line each runner prints. Segments without anchors share the output between
+ * the neighbouring anchors, which is never less than they had before.
+ */
+export function attributeOutput(parsed: ParsedCommand, detections: Detection[], output: string): Map<number, string> {
+  const lines = output.split("\n");
+  const pos = new Map<number, number>();
+  let cursor = 0;
+  const findLine = (test: (line: string) => boolean): number => {
+    for (let i = cursor; i < lines.length; i++) if (test(lines[i] as string)) return i;
+    return -1;
+  };
+  const byIndex = new Map(detections.map((d) => [d.segmentIndex, d]));
+  parsed.segments.forEach((seg, i) => {
+    const echo = literalEcho(seg);
+    let found = -1;
+    if (echo !== null) found = findLine((l) => l.trim() === echo);
+    else {
+      const d = byIndex.get(i);
+      if (d) {
+        const script = /^(?:npm run|npm|pnpm run|pnpm|yarn run|yarn|bun run) (\S+)$/.exec(d.runner)?.[1];
+        if (script) found = findLine((l) => new RegExp(`^> \\S+@\\S+ ${script.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`).test(l) || /^\$ /.test(l));
+        if (found < 0) {
+          const header = RUNNER_HEADERS.find(([r]) => r.test(d.runner))?.[1];
+          if (header) found = findLine((l) => header.test(l));
+        }
+      }
+    }
+    if (found >= 0) {
+      pos.set(i, found);
+      cursor = found + 1;
+    }
+  });
+  const out = new Map<number, string>();
+  if (pos.size === 0) {
+    for (const d of detections) out.set(d.segmentIndex, output);
+    return out;
+  }
+  for (const d of detections) {
+    const i = d.segmentIndex;
+    let start = 0;
+    for (const [j, p] of pos) {
+      // An earlier segment's anchor line belongs to that segment; the runner's own header stays in its chunk.
+      const from = j === i ? p : p + 1;
+      if (j <= i && from >= start) start = from;
+    }
+    let end = lines.length;
+    for (const [j, p] of pos) if (j > i && p < end) end = p;
+    out.set(i, lines.slice(start, Math.max(start, end)).join("\n"));
+  }
+  return out;
+}
+
 /**
  * Builds receipts for a finished command. Pure apart from the fingerprint.
  * Ids are placeholders (`r-?`) until `recordRun` assigns them.
@@ -282,13 +365,14 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
   if (detections.length === 0) return [];
   const exitKnown = input.exit !== null && input.exit !== undefined;
   const analyses = detections.map((d) => maskingFor(parsedCommand, d));
-  const output = combined;
-  const preliminary = detections.map((d, i) => parseOutput(d.category, output, { exit: null, interrupted: input.interrupted }));
+  const chunks = attributeOutput(parsedCommand, detections, combined);
+  const preliminary = detections.map((d) => parseOutput(d.category, chunks.get(d.segmentIndex) ?? combined, { exit: null, interrupted: input.interrupted }));
   const anyFail = preliminary.some((r) => r.verdict === "fail");
   const out: BuiltReceipt[] = [];
   detections.forEach((d, i) => {
     const analysis = analyses[i] as MaskAnalysis;
     if (analysis.background) return;
+    const output = chunks.get(d.segmentIndex) ?? combined;
     let exit: number | null = null;
     let signalNote: string | null = null;
     if (exitKnown && analysis.exitPreserved) {

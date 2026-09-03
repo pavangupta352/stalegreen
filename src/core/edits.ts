@@ -105,7 +105,28 @@ function formatterEdit(words: string[]): EditCandidate | null {
   return null;
 }
 
-function segmentEdits(seg: Segment): EditCandidate[] {
+/** Decides from a git command's output whether the working tree actually changed. */
+function gitChangedTree(sub: string, words: string[], output: string): boolean {
+  if (!output) return true;
+  if (sub === "pull" || sub === "merge" || sub === "rebase" || sub === "cherry-pick" || sub === "revert" || sub === "am") {
+    return !/Already up[ -]to[ -]date|is up to date\.|nothing to commit|No changes|error: |CONFLICT \(|fatal: /i.test(output) || /Fast-forward|Updating [0-9a-f]+\.\.[0-9a-f]+|Merge made|Successfully rebased|files? changed|\| \d+ [+-]/.test(output);
+  }
+  if (sub === "checkout" || sub === "switch") {
+    if (words.includes("--")) return true;
+    if (/Already on '|fatal: |error: /.test(output)) return false;
+    return true;
+  }
+  if (sub === "stash") {
+    if (/No local changes to save|No stash entries found|fatal: /.test(output)) return false;
+    return true;
+  }
+  if (sub === "apply") return !/error: |does not apply|fatal: /.test(output);
+  if (sub === "clean") return /Removing /.test(output);
+  if (sub === "reset") return !/fatal: /.test(output);
+  return true;
+}
+
+function segmentEdits(seg: Segment, output = ""): EditCandidate[] {
   const out: EditCandidate[] = [];
   for (const r of seg.redirects) {
     if ((r.op === ">" || r.op === ">>" || r.op === "&>" || r.op === "&>>" || r.op === ">|") && (r.fd === null || r.fd === 1)) {
@@ -139,6 +160,7 @@ function segmentEdits(seg: Segment): EditCandidate[] {
     // Creating a branch leaves the working tree as it is.
     if ((w1 === "checkout" && words.some((w) => w === "-b" || w === "-B" || w === "--orphan")) || (w1 === "switch" && words.some((w) => w === "-c" || w === "-C" || w === "--orphan"))) return out;
     if (w1 === "reset" && !words.some((w) => w === "--hard" || w === "--merge" || w === "--keep") && !words.includes("--")) return out;
+    if (!gitChangedTree(w1, words, output)) return out;
     const dash = words.indexOf("--");
     const path = dash >= 0 && words[dash + 1] ? (words[dash + 1] as string) : null;
     out.push({ path, kind: `git ${w1}` });
@@ -153,13 +175,17 @@ function segmentEdits(seg: Segment): EditCandidate[] {
   return out;
 }
 
-/** Edit events implied by a shell command. Verification runners are not edits, formatters are. */
-export function editsFromBash(command: string): EditCandidate[] {
+/**
+ * Edit events implied by a shell command. Verification runners are not edits,
+ * formatters are. When the command's output is known, git operations count
+ * only if the output shows the tree changed.
+ */
+export function editsFromBash(command: string, output = ""): EditCandidate[] {
   const parsed = parseCommand(command);
   const out: EditCandidate[] = [];
   for (const seg of parsed.segments) {
     if (seg.words.length === 0 && seg.redirects.length === 0) continue;
-    out.push(...segmentEdits(seg));
+    out.push(...segmentEdits(seg, output));
   }
   if (parsed.heredoc && out.length === 0) {
     // A heredoc feeding an interpreter can write anywhere; count it only when the script visibly writes.
