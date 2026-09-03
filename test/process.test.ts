@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -50,30 +49,6 @@ describe("dist/hook.js as a process", () => {
     expect(runHook("Stop", stop("All tests pass."), env, "unknown-harness").status).toBe(0);
     expect(countErrors(home.home)).toBe(before + 1);
   });
-
-  it("starts fast: cold start p95 under the budget", () => {
-    const budget = Number(process.env.STALEGREEN_PERF_MAX_MS ?? "50");
-    const payload = { ...loadHookFixture("PostToolUse-edit.json"), tool_name: "Read", cwd: repo.dir };
-    const samples: number[] = [];
-    for (let i = 0; i < 25; i++) samples.push(runHook("PostToolUse", payload, env).ms);
-    samples.sort((a, b) => a - b);
-    const p95 = samples[Math.min(samples.length - 1, Math.ceil(samples.length * 0.95) - 1)] as number;
-    const median = samples[Math.floor(samples.length / 2)] as number;
-    const baseline = nodeBaseline();
-    // eslint-disable-next-line no-console
-    console.log(`hook cold start: median ${median.toFixed(1)} ms, p95 ${p95.toFixed(1)} ms, node -e 0 baseline ${baseline.toFixed(1)} ms (budget ${budget} ms over baseline)`);
-    expect(p95 - baseline).toBeLessThan(budget);
-  });
-
-  it("keeps the Stop path under 150 ms including the fingerprint", () => {
-    const samples: number[] = [];
-    for (let i = 0; i < 10; i++) samples.push(runHook("Stop", stop("All 41 tests pass.", { prompt_id: `perf-${i}` }), env).ms);
-    samples.sort((a, b) => a - b);
-    const p95 = samples[Math.ceil(samples.length * 0.95) - 1] as number;
-    // eslint-disable-next-line no-console
-    console.log(`stop hook: p95 ${p95.toFixed(1)} ms`);
-    expect(p95).toBeLessThan(400);
-  });
 });
 
 function countErrors(home: string): number {
@@ -84,15 +59,5 @@ function countErrors(home: string): number {
   }
 }
 
-function nodeBaseline(): number {
-  const times: number[] = [];
-  for (let i = 0; i < 10; i++) {
-    const start = process.hrtime.bigint();
-    spawnSync(process.execPath, ["-e", "0"], { encoding: "utf8" });
-    times.push(Number(process.hrtime.bigint() - start) / 1e6);
-  }
-  times.sort((a, b) => a - b);
-  return times[Math.floor(times.length / 2)] as number;
-}
 
 export { hookJs };

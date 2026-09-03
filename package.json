@@ -48,10 +48,11 @@
   },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsup",
-    "test": "vitest run",
+    "test": "vitest run --exclude test/perf.test.ts && vitest run test/perf.test.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "test:perf": "vitest run test/perf.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.7.0",
