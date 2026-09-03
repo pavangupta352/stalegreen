@@ -21,6 +21,14 @@ Keep a Changelog, and the project uses semantic versioning.
   claim when its evidence is stale, failed or masked, with a loop guard so a
   claim is blocked at most once per turn.
 - `stalegreen check`, `stalegreen receipt` and `stalegreen doctor`.
+- `stalegreen history`: replays past Claude Code sessions (main transcript
+  and subagents, streamed) through the receipt builder and the gate and lists
+  the claims whose evidence was stale, failed or masked, with `--explain` for
+  the receipt, the command and the sentence behind each one.
+- `stalegreen stats`: stale, failed, masked and unbacked claim rates and the
+  hidden-exit rate of verification runs over a window, per model and per
+  session kind. Sessions without tool calls are excluded and a status line
+  repeated word for word within a session is counted once per verdict.
 - The unmask rewrite: the PreToolUse hook wraps verification commands in
   POSIX sh so the full output is logged, the tail is shown, an explicit
   `[stalegreen] exit=<code> receipt=<id>` marker is printed and the exit

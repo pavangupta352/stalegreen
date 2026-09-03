@@ -148,13 +148,42 @@ Every verdict, from the hooks and from the CLI, serialises to the same shape so 
 
 Receipts, edit events and verdicts live under `~/.stalegreen/sessions/<session>/` as append-only JSONL, one file per session, plus a log per run.
 
+## Measured on real sessions
+
+`stalegreen stats` replays past Claude Code sessions through the same gate and reports how often a green claim was stale, failed, masked or unbacked, and how often a verification run hid its exit status. This is the output on the author's own machine, 180 days of sessions, pasted as printed:
+
+```
+$ stalegreen stats --since 180d
+
+Green claims     375   in 16 sessions, 10 repeated status lines counted once
+  fresh          155   41%   a passing run and no edits since
+  stale           98   26%   a passing run, then edits, no rerun
+  failed          48   13%   the last matching run failed
+  masked          23    6%   the exit status was hidden and nothing readable was left
+  no run          51   14%   nothing matching ran in the session
+
+Verification runs   8,950
+  exit hidden       8,748   98%   piped, redirected, chained or sent to /dev/null
+  hid a failure     1,359   15%   exit hidden, failure marker in the visible output
+  no result         1,487   17%   exit hidden and no summary line either
+
+26% of green claims were stale (98 of 375); 98% of verification runs hid their exit status (8748 of 8950).
+```
+
+Every verdict behind those numbers was reviewed by hand. The stale ones are real edits after the quoted run. The failed ones are builds that exited 1 for months while every summary said "build green". The command reads transcripts locally and prints aggregates only; `stalegreen history --explain` lists the individual claims with their receipts.
+
 ## CLI
 
 ```
 stalegreen check [--session <id>] [--json]   claims and evidence for the current or last session
 stalegreen receipt <id>                      a run's receipt and the tail of its log
-stalegreen doctor                            store health and the last verdicts
+stalegreen doctor                            hooks, store health and the last verdicts
+stalegreen history [--since 30d] [--include-none] [--explain] [--json]
+                                             replay past sessions: stale, failed and masked claims
+stalegreen stats [--since 90d] [--json]      the rates above, per model and per session kind
 ```
+
+`history` and `stats` read `~/.claude/projects` (or `$CLAUDE_CONFIG_DIR/projects`) as a stream, so a multi-gigabyte transcript is fine. They never write there and never leave the machine.
 
 ## Principles
 
