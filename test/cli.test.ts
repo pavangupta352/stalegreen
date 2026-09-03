@@ -8,6 +8,7 @@ import { ensureBuilt, hookJs, loadHookFixture, makeRepo, readFixture, repoRoot, 
 
 let home: string;
 let cfg: string;
+let codexHome: string;
 let repo: TempRepo;
 const cliJs = join(repoRoot, "dist", "cli.js");
 
@@ -15,6 +16,7 @@ beforeAll(() => ensureBuilt());
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), "stalegreen-home-"));
   cfg = mkdtempSync(join(tmpdir(), "stalegreen-cfg-"));
+  codexHome = mkdtempSync(join(tmpdir(), "stalegreen-codex-"));
   repo = makeRepo();
   process.env.STALEGREEN_HOME = home;
 });
@@ -22,11 +24,12 @@ afterEach(() => {
   delete process.env.STALEGREEN_HOME;
   rmSync(home, { recursive: true, force: true });
   rmSync(cfg, { recursive: true, force: true });
+  rmSync(codexHome, { recursive: true, force: true });
   repo.cleanup();
 });
 
 function cli(args: string[], extraEnv: Record<string, string> = {}, cwd = repo.dir) {
-  return spawnSync(process.execPath, [cliJs, ...args], { cwd, env: { ...process.env, STALEGREEN_HOME: home, CLAUDE_CONFIG_DIR: cfg, ...extraEnv }, encoding: "utf8" });
+  return spawnSync(process.execPath, [cliJs, ...args], { cwd, env: { ...process.env, STALEGREEN_HOME: home, CLAUDE_CONFIG_DIR: cfg, CODEX_HOME: codexHome, ...extraEnv }, encoding: "utf8" });
 }
 
 describe("install --claude", () => {
@@ -129,6 +132,25 @@ describe("dist/cli.js", () => {
     expect(un.status).toBe(0);
     expect(un.stdout).toContain("Removed 4");
     expect(cli(["doctor"]).stdout).toContain("claude user hooks: not installed");
+  });
+
+  it("installs and removes the Codex hooks in hooks.json and reports them through doctor", () => {
+    const install = cli(["install", "--codex"]);
+    expect(install.status, install.stderr).toBe(0);
+    expect(install.stdout).toContain("run /hooks");
+    const hooks = JSON.parse(readFileSync(join(codexHome, "hooks.json"), "utf8")) as { hooks: Record<string, { matcher?: string; hooks: { command: string; timeout: number }[] }[]> };
+    expect(Object.keys(hooks.hooks).sort()).toEqual(["PostToolUse", "PreToolUse", "Stop", "SubagentStop"]);
+    expect(hooks.hooks.PreToolUse?.[0]?.matcher).toBe("^Bash$");
+    expect(hooks.hooks.PreToolUse?.[0]?.hooks[0]?.command).toMatch(/node .*hook\.js codex PreToolUse$/);
+    expect(hooks.hooks.PostToolUse?.[0]?.matcher).toContain("apply_patch");
+    expect(cli(["doctor"]).stdout).toContain("codex user hooks: PreToolUse, PostToolUse, Stop, SubagentStop");
+    const again = cli(["install", "--codex"]);
+    expect(again.stdout).toContain("replaced 4 older entries");
+    const un = cli(["uninstall", "--codex"]);
+    expect(un.stdout).toContain("Removed 4 stalegreen hook entries");
+    expect(cli(["doctor"]).stdout).toContain("codex user hooks: not installed");
+    expect(cli(["install", "--all"]).stdout).toContain("Codex asks you to review");
+    expect(cli(["uninstall", "--all"]).status).toBe(0);
   });
 
   it("refuses install without a harness flag and reports a missing hook file", () => {

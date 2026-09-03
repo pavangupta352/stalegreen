@@ -10,8 +10,9 @@ import { describeCounts, readReceipts, readVerdicts, runLogPath } from "../core/
 import { listSessions, readJsonl } from "../core/store.js";
 import { VERSION } from "../version.js";
 import { DEFAULT_HISTORY, runHistory } from "./history.js";
+import { HOOK_EVENTS, hookStatus, installHooks, uninstallHooks, type HarnessName } from "./install.js";
+import { parseHarnessChoice } from "./sessions.js";
 import { DEFAULT_STATS, runStats } from "./stats.js";
-import { CLAUDE_EVENTS, claudeHookStatus, installClaude, uninstallClaude } from "./install.js";
 
 const HELP = `stalegreen ${VERSION}
 
@@ -19,14 +20,16 @@ Keeps a coding agent's green claims honest: verification runs are recorded
 unmasked, and "done" is blocked when the evidence is stale, failed or masked.
 
 Usage:
-  stalegreen install --claude [--project] [--advisory]   register the hooks in Claude Code settings
-  stalegreen uninstall --claude [--project]              remove them
+  stalegreen install --claude|--codex|--all [--project] [--advisory]
+                                                         register the hooks (Claude Code settings, Codex hooks.json)
+  stalegreen uninstall --claude|--codex|--all [--project] remove them
   stalegreen check [--session <id>] [--json]             claims and evidence for the current or last session
   stalegreen receipt <id> [--session <id>]               a run's receipt and the tail of its log
-  stalegreen history [--since 30d] [--include-none] [--all-messages] [--explain] [--json] [--limit N]
+  stalegreen history [--since 30d] [--harness claude|codex|all] [--include-none] [--all-messages] [--explain] [--json] [--limit N]
                                                          replay past sessions: stale, failed and masked claims
-  stalegreen stats [--since 90d] [--json]                stale, failed, masked and unbacked claim rates and the
-                                                         hidden-exit rate of verification runs, per model
+  stalegreen stats [--since 90d] [--harness claude|codex|all] [--json]
+                                                         stale, failed, masked and unbacked claim rates and the
+                                                         hidden-exit rate of verification runs, per harness and model
   stalegreen doctor                                      hooks, node, store health and the last verdicts
   stalegreen --version
   stalegreen --help
@@ -150,21 +153,24 @@ function cmdDoctor(): number {
   console.log(`stalegreen ${VERSION}`);
   console.log(`node ${process.version}${Number(process.versions.node.split(".")[0]) >= 20 ? "" : "  (needs 20 or newer)"}`);
   console.log(`store ${home}${existsSync(home) ? "" : " (not created yet)"}`);
-  for (const scope of ["user", "project"] as const) {
-    const s = claudeHookStatus(scope, process.cwd());
-    const present = CLAUDE_EVENTS.filter((e) => s.events[e.event]).map((e) => e.event);
-    if (present.length === 0) {
-      console.log(`claude ${scope} hooks: not installed (${s.settingsFile})`);
-      continue;
-    }
-    const missing = CLAUDE_EVENTS.filter((e) => !s.events[e.event]).map((e) => e.event);
-    console.log(`claude ${scope} hooks: ${present.join(", ")}${missing.length ? `  missing: ${missing.join(", ")}` : ""} (${s.settingsFile})`);
-    if (missing.length) problems++;
-    if (!s.hookExists) {
-      console.log(`  hook file missing: ${s.hookPath ?? "?"}  (run \`stalegreen install --claude\`)`);
-      problems++;
-    } else if (s.installedVersion && s.installedVersion !== VERSION) {
-      console.log(`  hook file is version ${s.installedVersion}, CLI is ${VERSION}  (run \`stalegreen install --claude\` to update)`);
+  for (const harness of ["claude", "codex"] as const) {
+    for (const scope of ["user", "project"] as const) {
+      const s = hookStatus(harness, scope, process.cwd());
+      const events = HOOK_EVENTS[harness];
+      const present = events.filter((e) => s.events[e.event]).map((e) => e.event);
+      if (present.length === 0) {
+        console.log(`${harness} ${scope} hooks: not installed (${s.settingsFile})`);
+        continue;
+      }
+      const missing = events.filter((e) => !s.events[e.event]).map((e) => e.event);
+      console.log(`${harness} ${scope} hooks: ${present.join(", ")}${missing.length ? `  missing: ${missing.join(", ")}` : ""} (${s.settingsFile})`);
+      if (missing.length) problems++;
+      if (!s.hookExists) {
+        console.log(`  hook file missing: ${s.hookPath ?? "?"}  (run \`stalegreen install --${harness}\`)`);
+        problems++;
+      } else if (s.installedVersion && s.installedVersion !== VERSION) {
+        console.log(`  hook file is version ${s.installedVersion}, CLI is ${VERSION}  (run \`stalegreen install --${harness}\` to update)`);
+      }
     }
   }
   const errors = readJsonl<{ ts: string; event: string; error: string }>(join(home, "errors.jsonl"));
@@ -183,19 +189,32 @@ function cmdDoctor(): number {
 }
 
 function cmdInstall(args: Args, remove: boolean): number {
-  if (!args.flags.has("claude")) {
-    console.error(`usage: stalegreen ${remove ? "uninstall" : "install"} --claude [--project] [--advisory]`);
-    console.error("Codex and DeepSeek Harness support are on the way; see the changelog.");
+  const harnesses: HarnessName[] = [];
+  if (args.flags.has("claude") || args.flags.has("all")) harnesses.push("claude");
+  if (args.flags.has("codex") || args.flags.has("all")) harnesses.push("codex");
+  if (harnesses.length === 0) {
+    console.error(`usage: stalegreen ${remove ? "uninstall" : "install"} --claude|--codex|--all [--project]${remove ? "" : " [--advisory]"}`);
     return 2;
   }
   const scope = args.flags.has("project") ? "project" : "user";
   try {
-    if (remove) {
-      const r = uninstallClaude({ scope, cwd: process.cwd() });
-      console.log(r.removed > 0 ? `Removed ${r.removed} stalegreen hook entries from ${r.settingsFile}` : `No stalegreen hooks in ${r.settingsFile}`);
-      return 0;
+    for (const harness of harnesses) {
+      if (remove) {
+        const r = uninstallHooks(harness, { scope, cwd: process.cwd() });
+        console.log(r.removed > 0 ? `Removed ${r.removed} stalegreen hook entries from ${r.settingsFile}` : `No stalegreen hooks in ${r.settingsFile}`);
+        continue;
+      }
+      const r = installHooks(harness, { scope, cwd: process.cwd() });
+      console.log(`Hook installed at ${r.hookPath}`);
+      console.log(`Registered PreToolUse, PostToolUse, Stop and SubagentStop in ${r.settingsFile}${r.replaced ? ` (replaced ${r.replaced} older entries)` : ""}`);
+      if (harness === "claude") {
+        console.log("New Claude Code sessions pick this up automatically; a running session reloads hooks when its settings change.");
+      } else {
+        console.log("Codex asks you to review new hooks once: open Codex, run /hooks and trust the stalegreen entries.");
+        console.log("For `codex exec`, pass --dangerously-bypass-hook-trust or trust them from an interactive session first.");
+      }
     }
-    const r = installClaude({ scope, cwd: process.cwd() });
+    if (remove) return 0;
     if (args.flags.has("advisory")) {
       const file = join(stalegreenHome(), "config.json");
       let cfg: Record<string, unknown> = {};
@@ -209,9 +228,6 @@ function cmdInstall(args: Args, remove: boolean): number {
       writeFileSync(file, JSON.stringify(cfg, null, 2) + "\n");
       console.log(`Policy set to advisory in ${file} (verdicts are recorded, nothing is blocked).`);
     }
-    console.log(`Hook installed at ${r.hookPath}`);
-    console.log(`Registered PreToolUse, PostToolUse, Stop and SubagentStop in ${r.settingsFile}${r.replaced ? ` (replaced ${r.replaced} older entries)` : ""}`);
-    console.log("New Claude Code sessions pick this up automatically; a running session reloads hooks when its settings change.");
     console.log("Run `stalegreen doctor` to confirm, and `stalegreen check` after your next verification run.");
     return 0;
   } catch (err) {
@@ -224,8 +240,14 @@ function cmdHistory(args: Args): Promise<number> {
   const since = args.flags.get("since");
   const limit = args.flags.get("limit");
   const session = args.flags.get("session");
+  const harness = parseHarnessChoice(args.flags.get("harness"));
+  if (args.flags.has("harness") && harness === null) {
+    console.error("--harness takes claude, codex or all");
+    return Promise.resolve(2);
+  }
   return runHistory({
     ...DEFAULT_HISTORY,
+    harness: harness ?? DEFAULT_HISTORY.harness,
     since: typeof since === "string" ? since : DEFAULT_HISTORY.since,
     includeNone: args.flags.has("include-none"),
     includeFresh: args.flags.has("include-fresh") || args.flags.has("all"),
@@ -240,8 +262,14 @@ function cmdHistory(args: Args): Promise<number> {
 function cmdStats(args: Args): Promise<number> {
   const since = args.flags.get("since");
   const limit = args.flags.get("limit");
+  const harness = parseHarnessChoice(args.flags.get("harness"));
+  if (args.flags.has("harness") && harness === null) {
+    console.error("--harness takes claude, codex or all");
+    return Promise.resolve(2);
+  }
   return runStats({
     ...DEFAULT_STATS,
+    harness: harness ?? DEFAULT_STATS.harness,
     since: typeof since === "string" ? since : DEFAULT_STATS.since,
     json: args.flags.has("json"),
     allMessages: args.flags.has("all-messages"),

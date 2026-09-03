@@ -26,9 +26,21 @@ Keep a Changelog, and the project uses semantic versioning.
   the claims whose evidence was stale, failed or masked, with `--explain` for
   the receipt, the command and the sentence behind each one.
 - `stalegreen stats`: stale, failed, masked and unbacked claim rates and the
-  hidden-exit rate of verification runs over a window, per model and per
-  session kind. Sessions without tool calls are excluded and a status line
-  repeated word for word within a session is counted once per verdict.
+  hidden-exit rate of verification runs over a window, per harness, per
+  model and per session kind. Sessions without tool calls are excluded and a
+  status line repeated word for word within a session is counted once per
+  verdict.
+- Codex support: `install --codex` writes the same four hooks to
+  `~/.codex/hooks.json` (or the repository's `.codex/hooks.json`). The Codex
+  adapter reads the `Bash` and `apply_patch` tools, the `Script completed`,
+  `Script failed` and `Script running with cell ID` headers, finishes a
+  still-running command from the `wait` tool's output, returns the rewrite
+  with the allow decision Codex requires, and blocks at Stop with
+  `{"decision":"block","reason":...}`. The rollout reader behind `history`
+  and `stats` merges child threads into their parent and reads the shell
+  commands out of Codex's JavaScript exec cells.
+- The hook handlers are shared across harnesses through a small adapter
+  (turn id, shell output shape, edit tools, allow decision, block format).
 - The unmask rewrite: the PreToolUse hook wraps verification commands in
   POSIX sh so the full output is logged, the tail is shown, an explicit
   `[stalegreen] exit=<code> receipt=<id>` marker is printed and the exit

@@ -7,7 +7,7 @@ Hooks that keep a coding agent's green claims honest: every verification run is 
 
 Zero tokens, zero network, zero telemetry. Every verdict is deterministic and cites a receipt.
 
-> Status: pre-release. The engine, the Claude Code hooks and the freshness gate are complete and tested. The npm package, the plugin manifests and the Codex adapter land over the next weeks. Until then, build from source (see below).
+> Status: pre-release. The engine, the Claude Code and Codex hooks, the freshness gate and the session replay are complete and tested. The npm package and the plugin manifests land next. Until then, build from source (see below).
 
 ## The problem
 
@@ -52,13 +52,15 @@ Until the first npm release, build from source and register the hooks:
 ```sh
 git clone https://github.com/pavangupta352/stalegreen
 cd stalegreen && npm install && npm run build
-node dist/cli.js install --claude
+node dist/cli.js install --claude     # or --codex, or --all
 node dist/cli.js doctor
 ```
 
-`install --claude` copies the compiled hook to `~/.stalegreen/bin/hook.js` and registers PreToolUse, PostToolUse, Stop and SubagentStop in `~/.claude/settings.json` (add `--project` for the repository's `.claude/settings.json`, `--advisory` to record verdicts without blocking). `uninstall --claude` removes them. The plugin manifests for `/plugin marketplace add` are next; see the changelog.
+`install` copies the compiled hook to `~/.stalegreen/bin/hook.js` and registers PreToolUse, PostToolUse, Stop and SubagentStop: for Claude Code in `~/.claude/settings.json`, for Codex in `~/.codex/hooks.json`. Add `--project` for the repository's `.claude/settings.json` or `.codex/hooks.json`, `--advisory` to record verdicts without blocking. `uninstall` removes them. The plugin manifests for `/plugin marketplace add` are next; see the changelog.
 
-Permissions stay yours: the hook returns an `allow` decision for a wrapped command only when your own permission rules already allow the original one, so it never widens what Claude Code may run. Set `"permission": "allow"` in the config to skip prompts for every verification run, or `"ask"` to never return a decision.
+**Claude Code.** Permissions stay yours: the hook returns an `allow` decision for a wrapped command only when your own permission rules already allow the original one, so it never widens what Claude Code may run. Set `"permission": "allow"` in the config to skip prompts for every verification run, or `"ask"` to never return a decision.
+
+**Codex.** Codex reviews new hooks once: open Codex, run `/hooks` and trust the stalegreen entries (`codex exec` takes `--dangerously-bypass-hook-trust` instead). Codex accepts a rewritten command only together with an `allow` decision, so the decision is returned for the verification command itself and never for anything else; set `"permission": "ask"` to turn the rewrite off there. Codex hooks report no exit status for a shell command at all, which makes the rewrite the only way to know how a run ended; without it the runner's own summary line still decides, and a `Script failed` header counts as a failure. A block at Stop is returned as `{"decision":"block","reason":...}`, which Codex turns into a continuation prompt.
 
 ## How freshness is decided
 
@@ -183,7 +185,7 @@ stalegreen history [--since 30d] [--include-none] [--explain] [--json]
 stalegreen stats [--since 90d] [--json]      the rates above, per model and per session kind
 ```
 
-`history` and `stats` read `~/.claude/projects` (or `$CLAUDE_CONFIG_DIR/projects`) as a stream, so a multi-gigabyte transcript is fine. They never write there and never leave the machine.
+`history` and `stats` read `~/.claude/projects` (or `$CLAUDE_CONFIG_DIR/projects`) and `~/.codex/sessions` (or `$CODEX_HOME/sessions`) as streams, so a multi-gigabyte transcript is fine; `--harness claude|codex|all` picks the source. Codex child threads are merged into their parent, and the shell commands inside Codex's JavaScript exec cells are read out of the cell. They never write there and never leave the machine.
 
 ## Principles
 
