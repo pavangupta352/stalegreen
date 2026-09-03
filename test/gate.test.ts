@@ -152,8 +152,9 @@ describe("freshness gate end to end", () => {
     expect(readReceipts(SESSION)[7]).toMatchObject({ verdict: "pass", signal: "summary-line:pytest-passed" });
     runClaudeHook("PostToolUse", bashDone("go test ./... 2>&1 | grep ok", "ok  \texample.com/app/holds\t0.412s\n", 0));
     expect(readReceipts(SESSION)[8]).toMatchObject({ verdict: "inconclusive" });
+    // Searching a silent-success tool's output for errors and finding none is a result.
     runClaudeHook("PostToolUse", bashDone("npx eslint . 2>&1 | grep error", "", 0));
-    expect(readReceipts(SESSION)[9]).toMatchObject({ verdict: "inconclusive" });
+    expect(readReceipts(SESSION)[9]).toMatchObject({ verdict: "pass", signal: "grep-empty" });
   });
 
   it("attributes the output of a compound command to its segments", () => {
@@ -163,9 +164,83 @@ describe("freshness gate end to end", () => {
     expect(receipts.map((r) => `${r.category}:${r.verdict}:${r.signal}`)).toEqual(["typecheck:pass:silent-through-pipe", "test:pass:summary-only:vitest-passed", "lint:pass:silent-through-pipe"]);
     expect(receipts[1]?.counts).toEqual({ passed: 41, total: 41 });
     expect(receipts[0]?.counts).toEqual({});
-    // Without anchors a segment cannot claim the shared output was empty.
+    // Without anchors the tsc segment shares the output; a head of twenty lines would still have shown a tsc error, so it passes.
     runClaudeHook("PostToolUse", bashDone("npx tsc --noEmit 2>&1 | head -20; npx eslint . 2>&1 | tail -20", "src/a.ts:1:1  error  no-unused-vars\n\n✖ 1 problem (1 error, 0 warnings)\n", 0));
-    expect(readReceipts(SESSION).slice(3).map((r) => `${r.category}:${r.verdict}`)).toEqual(["typecheck:inconclusive", "lint:fail"]);
+    expect(readReceipts(SESSION).slice(3).map((r) => `${r.category}:${r.verdict}:${r.signal}`)).toEqual(["typecheck:pass:head-no-errors", "lint:fail:eslint-problems"]);
+    runClaudeHook("PostToolUse", bashDone("npx tsc --noEmit 2>&1 | head -20; npx eslint . 2>&1 | tail -20", "src/a.ts(1,1): error TS2322: nope\n\n✖ 1 problem (1 error, 0 warnings)\n", 0));
+    expect(readReceipts(SESSION).slice(5).map((r) => `${r.category}:${r.verdict}`)).toEqual(["typecheck:fail", "lint:fail"]);
+  });
+
+  it("recovers the exit status the agent printed itself", () => {
+    runClaudeHook("PostToolUse", bashDone('npx tsc --noEmit; echo "=== tsc exit: $? ==="', "=== tsc exit: 0 ===\n", 0));
+    expect(readReceipts(SESSION)[0]).toMatchObject({ category: "typecheck", exit: 0, verdict: "pass", signal: "exit-0+exit-from-echo" });
+    runClaudeHook("PostToolUse", bashDone('npx tsc --noEmit; echo "=== tsc exit: $? ==="', "src/a.ts(1,1): error TS2322: nope\n=== tsc exit: 2 ===\n", 0));
+    expect(readReceipts(SESSION)[1]).toMatchObject({ exit: 2, verdict: "fail" });
+    runClaudeHook("PostToolUse", bashDone('npm run build 2>&1 | tail -15; echo "EXIT:${PIPESTATUS[0]}"', "\n> app@1.0.0 build\n> next build\n\n ✓ Compiled successfully in 3s\nEXIT:0\n", 0));
+    expect(readReceipts(SESSION)[2]).toMatchObject({ category: "build", exit: 0, verdict: "pass" });
+    // A bare $? after a pipe is the pipe's status, not the runner's.
+    runClaudeHook("PostToolUse", bashDone('npx vitest run 2>&1 | tail -5; echo "exit=$?"', " Tests  3 passed (3)\nexit=0\n", 0));
+    expect(readReceipts(SESSION)[3]).toMatchObject({ exit: null, verdict: "pass", signal: "summary-only:vitest-passed" });
+    runClaudeHook("PostToolUse", bashDone('npx tsc --noEmit; echo "=== tsc exit: $? ==="', "something else entirely\n", 0));
+    expect(readReceipts(SESSION)[4]).toMatchObject({ exit: null, verdict: "inconclusive" });
+  });
+
+  it("reads error counts and empty error searches as results for silent-success tools", () => {
+    runClaudeHook("PostToolUse", bashDone('pnpm lint 2>&1 | grep -cE " error " | xargs echo "lint errors:"', "lint errors: 0\n", 0));
+    expect(readReceipts(SESSION)[0]).toMatchObject({ category: "lint", verdict: "pass", signal: "count-zero" });
+    runClaudeHook("PostToolUse", bashDone('pnpm lint 2>&1 | grep -cE " error " | xargs echo "lint errors:"', "lint errors: 4\n", 0));
+    expect(readReceipts(SESSION)[1]).toMatchObject({ verdict: "fail", signal: "count-nonzero" });
+    runClaudeHook("PostToolUse", bashDone('npx tsc --noEmit -p tsconfig.json 2>&1 | grep -E "error TS" | grep -v "__tests__"', "", 0));
+    expect(readReceipts(SESSION)[2]).toMatchObject({ category: "typecheck", verdict: "pass", signal: "grep-empty", scope: "all" });
+    runClaudeHook("PostToolUse", bashDone('npx tsc --noEmit 2>&1 | grep -E "error TS" | head -20', "src/a.ts(1,1): error TS2322: nope\n", 0));
+    expect(readReceipts(SESSION)[3]).toMatchObject({ verdict: "fail" });
+    // Searching for something other than errors proves nothing when it finds nothing.
+    runClaudeHook("PostToolUse", bashDone('npx tsc --noEmit 2>&1 | grep -E "hold.ts"', "", 0));
+    expect(readReceipts(SESSION)[4]).toMatchObject({ verdict: "inconclusive" });
+    runClaudeHook("PostToolUse", bashDone('npx vitest run 2>&1 | grep -c FAIL', "0\n", 0));
+    expect(readReceipts(SESSION)[5]).toMatchObject({ category: "test", verdict: "inconclusive" });
+  });
+
+  it("trusts a head or an error search of a typecheck or lint tool when no error line is visible", () => {
+    runClaudeHook("PostToolUse", bashDone('echo "=== gates ==="; npx tsc --noEmit 2>&1 | head -5; npx vitest run 2>&1 | tail -3', "=== gates ===\n\n Test Files  2 passed (2)\n      Tests  41 passed (41)\n   Duration  412ms\n", 0));
+    const receipts = readReceipts(SESSION);
+    expect(receipts[0]).toMatchObject({ category: "typecheck", verdict: "pass", signal: "head-no-errors" });
+    expect(receipts[1]).toMatchObject({ category: "test", verdict: "pass" });
+    // Without anchors the tsc chunk still holds the test output; a head of five lines would have shown an error.
+    runClaudeHook("PostToolUse", bashDone("npx tsc --noEmit 2>&1 | head -5; npx vitest run 2>&1 | tail -3", " Test Files  2 passed (2)\n      Tests  41 passed (41)\n   Duration  412ms\n", 0));
+    expect(readReceipts(SESSION)[2]).toMatchObject({ category: "typecheck", verdict: "pass", signal: "head-no-errors" });
+    runClaudeHook("PostToolUse", bashDone("npx tsc --noEmit 2>&1 | head -5; npx vitest run 2>&1 | tail -3", "src/a.ts(1,1): error TS2322: nope\n Tests  41 passed (41)\n", 0));
+    expect(readReceipts(SESSION)[4]).toMatchObject({ category: "typecheck", verdict: "fail" });
+    runClaudeHook("PostToolUse", bashDone('npx eslint src 2>&1 | grep -E "error|warning" | grep -v "generated" | head -20; npx vitest run 2>&1 | tail -3', " Test Files  2 passed (2)\n      Tests  41 passed (41)\n   Duration  412ms\n", 0));
+    expect(readReceipts(SESSION)[6]).toMatchObject({ category: "lint", verdict: "pass", signal: "grep-no-errors" });
+    expect(readReceipts(SESSION)[7]).toMatchObject({ category: "test", verdict: "pass" });
+    runClaudeHook("PostToolUse", bashDone('npx tsc --noEmit 2>&1 | head -1', "", 0));
+    expect(readReceipts(SESSION)[8]).toMatchObject({ verdict: "pass", signal: "silent-through-pipe" });
+    runClaudeHook("PostToolUse", bashDone('npx tsc --noEmit 2>&1 | head -1; npx vitest run 2>&1 | tail -3', " Tests  41 passed (41)\n Duration 412ms\n", 0));
+    expect(readReceipts(SESSION)[9]).toMatchObject({ category: "typecheck", verdict: "inconclusive" });
+    // Counts inside a parenthesised group still read.
+    runClaudeHook("PostToolUse", bashDone('(cd app && pnpm lint 2>&1 | grep -cE " error " | xargs echo "lint errors:") && echo ok', "lint errors: 0\nok\n", 0));
+    expect(readReceipts(SESSION)[11]).toMatchObject({ category: "lint", verdict: "pass", signal: "count-zero" });
+  });
+
+  it("prefers the run of the tool a claim names", () => {
+    runClaudeHook("PostToolUse", bashDone("ruff check src", "All checks passed!\n", 0));
+    runClaudeHook("PostToolUse", bashDone("npm run lint", "\n> app@1.0.0 lint\n> eslint .\n\n", 0));
+    writeFileSync(repo.file, "export const remaining = 5;\n");
+    runClaudeHook("PostToolUse", bashDone("ruff check src", "All checks passed!\n", 0));
+    // The JavaScript lint is stale, the ruff run is fresh.
+    expect(runClaudeHook("Stop", stopWith("ruff is clean.")).exit).toBe(0);
+    expect(readVerdicts(SESSION).at(-1)?.verdicts[0]?.evidence?.receipt).toBe("r-0003");
+    const stale = runClaudeHook("Stop", stopWith("eslint is clean.", { prompt_id: "p2" }));
+    expect(stale.exit).toBe(2);
+    expect(stale.stderr).toContain("r-0002");
+  });
+
+  it("treats a redirect read back in the same command as visible output", () => {
+    runClaudeHook("PostToolUse", bashDone('npm test > /tmp/sg-same.out 2>&1; echo "REAL exit: $?"; tail -4 /tmp/sg-same.out', "REAL exit: 0\n\n Test Files  2 passed (2)\n      Tests  41 passed (41)\n   Duration  412ms\n", 0));
+    expect(readReceipts(SESSION)[0]).toMatchObject({ category: "test", exit: 0, verdict: "pass", counts: { passed: 41 } });
+    runClaudeHook("PostToolUse", bashDone('npm test > /tmp/sg-same2.out 2>&1; tail -4 /tmp/sg-same2.out', "\n Test Files  1 failed | 1 passed (2)\n      Tests  2 failed | 39 passed (41)\n   Duration  455ms\n", 0));
+    expect(readReceipts(SESSION)[1]).toMatchObject({ exit: null, verdict: "fail", counts: { failed: 2 } });
   });
 
   it("uses a later read of a redirected log as the run's output", () => {

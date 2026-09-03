@@ -18,6 +18,10 @@ export interface MaskAnalysis {
   headLines: number | null;
   /** The output went through a filter (grep, sed, awk, cut, wc, sort, uniq, tr) that can hide lines. */
   filtered: boolean;
+  /** Patterns of the grep filters in the pipeline. */
+  filterPatterns: string[];
+  /** The pipeline ends in `grep -c` (a match count) or `wc -l`. */
+  countOnly: boolean;
   pipefail: boolean;
   /** The segment is backgrounded with `&`. */
   background: boolean;
@@ -25,7 +29,7 @@ export interface MaskAnalysis {
   pipelineEnd: number;
 }
 
-const FILTERS = new Set(["grep", "egrep", "fgrep", "rg", "head", "sed", "awk", "cut", "wc", "sort", "uniq", "tr", "xargs", "jq", "less", "more", "tail"]);
+const FILTERS = new Set(["grep", "egrep", "fgrep", "rg", "head", "sed", "awk", "cut", "wc", "sort", "uniq", "tr", "jq", "less", "more", "tail"]);
 const PASSTHROUGH = new Set(["cat", "tee"]);
 
 function isDevNull(target: string): boolean {
@@ -69,6 +73,8 @@ export function analyzeMasking(parsed: ParsedCommand, index: number): MaskAnalys
   let tailLines: number | null = null;
   let headLines: number | null = null;
   let filtered = false;
+  const filterPatterns: string[] = [];
+  let countOnly = false;
   const pipefail = hasPipefail(parsed, index);
   let pipelineEnd = index;
 
@@ -110,12 +116,24 @@ export function analyzeMasking(parsed: ParsedCommand, index: number): MaskAnalys
       } else {
         outputVisible = false;
         filtered = true;
+        if (cmd === "grep" || cmd === "egrep" || cmd === "fgrep" || cmd === "rg") {
+          const pattern = grepPattern(next.words);
+          const inverted = next.words.some((w) => w === "-v" || w === "--invert-match" || /^-[a-zA-Z]*v[a-zA-Z]*$/.test(w));
+          // An inverted grep only removes lines; one that removes error lines poisons an error search.
+          if (pattern !== null && (!inverted || /error|✖|problem|fail|warning/i.test(pattern))) filterPatterns.push(inverted ? `!${pattern}` : pattern);
+          countOnly = next.words.some((w) => w === "-c" || w === "--count" || /^-[a-zA-Z]*c[a-zA-Z]*$/.test(w));
+        } else if (cmd === "wc") countOnly = next.words.includes("-l");
+        else countOnly = false;
       }
     } else if (PASSTHROUGH.has(cmd)) {
       reasons.push(`pipe:${cmd}`);
+    } else if (cmd === "xargs" && next.words[1] === "echo") {
+      // `grep -c ... | xargs echo label` relabels a count; the count survives.
+      reasons.push("pipe:xargs");
     } else {
       reasons.push(`pipe:${cmd || "?"}`);
       outputVisible = false;
+      countOnly = false;
     }
     j++;
   }
@@ -158,5 +176,23 @@ export function analyzeMasking(parsed: ParsedCommand, index: number): MaskAnalys
   if ((parsed.segments[k] as Segment).background) background = true;
 
   const masked = reasons.some((r) => r !== "devnull:stderr") || !exitPreserved;
-  return { masked, reasons, exitPreserved, outputVisible, tailLines, headLines, filtered, pipefail, background, pipelineEnd };
+  return { masked, reasons, exitPreserved, outputVisible, tailLines, headLines, filtered, filterPatterns, countOnly, pipefail, background, pipelineEnd };
+}
+
+/** The search pattern of a grep segment: the `-e` value or the first non-flag word. */
+function grepPattern(words: string[]): string | null {
+  for (let i = 1; i < words.length; i++) {
+    const w = words[i] as string;
+    if ((w === "-e" || w === "--regexp") && words[i + 1]) return words[i + 1] as string;
+    if (w.startsWith("--regexp=")) return w.slice(9);
+  }
+  for (let i = 1; i < words.length; i++) {
+    const w = words[i] as string;
+    if (w.startsWith("-")) {
+      if ((w === "-A" || w === "-B" || w === "-C" || w === "-m" || w === "--max-count") && words[i + 1]) i++;
+      continue;
+    }
+    return w;
+  }
+  return null;
 }

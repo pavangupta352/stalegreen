@@ -10,8 +10,8 @@ import type { Config } from "./config.js";
 import { computeFingerprint } from "./fingerprint.js";
 import type { Category, Counts, EditEvent, Fingerprint, Harness, Receipt, RunScope, RunVerdict, Verdict } from "./grammar.js";
 import { analyzeMasking, type MaskAnalysis } from "./masking.js";
-import { detectAll, parseOutput, type Detection } from "./runners.js";
-import { parseCommand, type ParsedCommand, type Segment } from "./shell.js";
+import { detectAll, hasFailSignal, isSilent, parseOutput, type Detection } from "./runners.js";
+import { parseCommand, stripGroupingWords, type ParsedCommand, type Segment } from "./shell.js";
 import { appendJsonl, ensureDir, nextReceiptId, readJsonl, sessionDir } from "./store.js";
 
 export interface PendingRun {
@@ -136,6 +136,21 @@ export function detectRuns(command: string, config: Config, parsed?: ParsedComma
   return found;
 }
 
+/**
+ * The number printed by a `grep -c` or `wc -l` pipeline, optionally relabelled
+ * by a following `xargs echo <label>`. Null when no such line is visible.
+ */
+function countedMatches(output: string, parsed: ParsedCommand, pipelineEnd: number): number | null {
+  const last = parsed.segments[pipelineEnd] as Segment;
+  const words = stripGroupingWords(last.words);
+  let label = "";
+  if (words[0] === "xargs" && words[1] === "echo") label = words.slice(2).join(" ");
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`^\\s*${escaped}\\s*(\\d+)\\s*$`, "m");
+  const m = re.exec(output);
+  return m ? Number(m[1]) : null;
+}
+
 /** Number of lines in a chunk of output, blank lines included, so a lone newline counts as one. */
 function countLines(text: string): number {
   if (text.length === 0) return 0;
@@ -187,6 +202,8 @@ function maskingFor(parsed: ParsedCommand, d: Detection): MaskAnalysis {
     tailLines: inner.tailLines ?? outer.tailLines,
     headLines: inner.headLines ?? outer.headLines,
     filtered: inner.filtered || outer.filtered,
+    filterPatterns: [...inner.filterPatterns, ...outer.filterPatterns],
+    countOnly: inner.countOnly || outer.countOnly,
     pipefail: inner.pipefail,
     background: outer.background || inner.background,
     pipelineEnd: outer.pipelineEnd,
@@ -217,13 +234,73 @@ const RUNNER_HEADERS: [RegExp, RegExp][] = [
 
 /** Text an `echo` or `printf` segment prints, when it is literal. */
 function literalEcho(seg: Segment): string | null {
-  const w0 = seg.words[0];
+  const words = stripGroupingWords(seg.words);
+  const w0 = words[0];
   if (w0 !== "echo" && w0 !== "printf") return null;
-  const args = seg.words.slice(1).filter((w) => !(w0 === "echo" && /^-[neE]+$/.test(w)));
+  const args = words.slice(1).filter((w) => !(w0 === "echo" && /^-[neE]+$/.test(w)));
   if (args.length === 0) return null;
   const text = w0 === "printf" ? (args[0] as string).replace(/\\n/g, "") : args.join(" ");
   if (/[$`]/.test(text) || text.trim().length < 3) return null;
   return text.trim();
+}
+
+/** Words in a grep pattern that make it a search for failures. */
+const ERROR_PATTERN_RE = /error|✖|problem|fail|warning|Exception|panic|✘/i;
+
+/** The tool a package script ran, from the second banner line npm, pnpm and yarn print. */
+function scriptVia(output: string): string | undefined {
+  const m = /^>\s+(?!\S+@\S+\s)([a-z][\w./@-]*(?: [^\n]*)?)$/m.exec(output) ?? /^\$ ([a-z][\w./@-]*(?: [^\n]*)?)$/m.exec(output);
+  return m ? (m[1] as string).trim().slice(0, 120) : undefined;
+}
+
+/**
+ * Agents often print the exit status themselves: `cmd; echo "exit: $?"` or
+ * `cmd | tail; echo "EXIT:${PIPESTATUS[0]}"`. When such an echo follows the
+ * runner's pipeline, its printed number is the runner's exit status. A bare
+ * `$?` after a pipe is the last filter's status and is ignored there.
+ */
+export function recoverExitFromEcho(parsed: ParsedCommand, pipelineEnd: number, hasPipe: boolean, output: string): number | null {
+  for (let j = pipelineEnd + 1; j <= Math.min(pipelineEnd + 2, parsed.segments.length - 1); j++) {
+    const seg = parsed.segments[j] as Segment;
+    if (j === pipelineEnd + 1 && seg.op !== ";" && seg.op !== "newline" && seg.op !== "&&") return null;
+    const w0 = seg.words[0];
+    if (w0 !== "echo" && w0 !== "printf") continue;
+    const raw = seg.head;
+    const pipeStatus = /\$\{?PIPESTATUS\[0\]\}?|\$pipestatus\[1\]/i.test(raw);
+    const plain = /\$\?/.test(raw);
+    if (!pipeStatus && !plain) continue;
+    if (plain && !pipeStatus && hasPipe) return null;
+    // Rebuild the printed line from the echo's literal text.
+    const text = seg.words.slice(1).filter((w) => !(w0 === "echo" && /^-[neE]+$/.test(w))).join(" ");
+    const escaped = text.replace(/\$\{?PIPESTATUS\[0\]\}?|\$pipestatus\[1\]|\$\?/gi, " ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "(-?\\d+)");
+    if (!escaped.includes("(-?\\d+)")) continue;
+    const m = new RegExp(`^${escaped.replace(/\\\\n/g, "")}\\s*$`, "m").exec(output);
+    if (m) return Number(m[1]);
+    return null;
+  }
+  return null;
+}
+
+/**
+ * Lines printed by the agent's own status echoes after a pipeline, such as
+ * `TSC_EXIT:0` or `tsc exit: ` (empty under zsh), are not tool output.
+ */
+function stripStatusEchoLines(output: string, parsed: ParsedCommand, pipelineEnd: number): string {
+  const patterns: RegExp[] = [];
+  for (let j = pipelineEnd + 1; j <= Math.min(pipelineEnd + 2, parsed.segments.length - 1); j++) {
+    const seg = parsed.segments[j] as Segment;
+    const w0 = seg.words[0];
+    if (w0 !== "echo" && w0 !== "printf") continue;
+    if (!/\$[?{(]|\$[A-Za-z_]/.test(seg.head)) continue;
+    const text = seg.words.slice(1).filter((w) => !(w0 === "echo" && /^-[neE]+$/.test(w))).join(" ");
+    const escaped = text.replace(/\$\{[^}]*\}|\$\([^)]*\)|\$\??[A-Za-z_?]*/g, "\0").replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\0/g, ".*");
+    if (escaped.trim().length > 0) patterns.push(new RegExp(`^${escaped.replace(/\\\\n/g, "")}\\s*$`));
+  }
+  if (patterns.length === 0) return output;
+  return output
+    .split("\n")
+    .filter((line) => !patterns.some((p) => p.test(line)))
+    .join("\n");
 }
 
 /**
@@ -336,12 +413,15 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
       const category = p?.category ?? d?.category ?? "test";
       const parsed = parseOutput(category, output, { exit: marker.exit, interrupted: input.interrupted });
       const extra = extraVerdict(ctx.config, p?.runner ?? d?.runner ?? "", output, marker.exit);
+      const runnerName = p?.runner ?? d?.runner ?? "unknown";
+      const via = /^(?:npm|pnpm|yarn|bun) /.test(runnerName) ? scriptVia(output) : undefined;
       const receipt = base(d, {
         id: marker.id,
         cwd,
         cmd: d?.segment.head ?? p?.command ?? input.command,
         source,
-        runner: p?.runner ?? d?.runner ?? "unknown",
+        runner: runnerName,
+        ...(via ? { via } : {}),
         category,
         scope: p?.scope ?? d?.scope ?? "all",
         exit: marker.exit,
@@ -372,7 +452,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
   detections.forEach((d, i) => {
     const analysis = analyses[i] as MaskAnalysis;
     if (analysis.background) return;
-    const output = chunks.get(d.segmentIndex) ?? combined;
+    let output = stripStatusEchoLines(chunks.get(d.segmentIndex) ?? combined, parsedCommand, analysis.pipelineEnd);
     let exit: number | null = null;
     let signalNote: string | null = null;
     if (exitKnown && analysis.exitPreserved) {
@@ -382,19 +462,68 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
       else if (!anyFail && i === detections.length - 1) exit = input.exit;
       else signalNote = "compound-exit-unattributed";
     }
+    let recovered: number | null = null;
+    if (exit === null && !d.nested) {
+      recovered = recoverExitFromEcho(parsedCommand, analysis.pipelineEnd, analysis.pipelineEnd > d.segmentIndex, combined);
+      if (recovered !== null) exit = recovered;
+    }
+    // A run redirected to a file that the same command reads back with cat or tail is visible after all.
+    const redirectTarget = analysis.reasons.map((r) => (r.startsWith("redirect:") ? r.slice(9) : null)).find((r): r is string => r !== null) ?? null;
+    let readBack = false;
+    if (redirectTarget) {
+      for (let j = analysis.pipelineEnd + 1; j < parsedCommand.segments.length; j++) {
+        const seg = parsedCommand.segments[j] as Segment;
+        const w0 = seg.words[0] ?? "";
+        if ((w0 === "cat" || w0 === "tail" || w0 === "less" || w0 === "more") && seg.words.includes(redirectTarget)) {
+          readBack = true;
+          output = combined;
+          break;
+        }
+      }
+    }
     // A head or tail shows everything when the output is shorter than its line count (blank lines count).
     const lines = countLines(output);
     const complete = (analysis.tailLines !== null && lines < analysis.tailLines) || (analysis.headLines !== null && lines < analysis.headLines);
     // A tail shorter than three lines can cut a multi-line summary; treat it like a filter, where one-line summaries still count.
     const shortTail = analysis.tailLines !== null && analysis.tailLines < 3 && !complete;
-    const outputVisible = complete || (analysis.outputVisible && !shortTail);
-    const parsed = parseOutput(d.category, output, { exit, interrupted: input.interrupted, outputVisible, filtered: (analysis.filtered || shortTail) && !complete });
+    const outputVisible = readBack || complete || (analysis.outputVisible && !shortTail);
+    const filtered = (analysis.filtered || shortTail) && !complete && !readBack;
+    const parsed = parseOutput(d.category, output, { exit, interrupted: input.interrupted, outputVisible, filtered });
     const extra = extraVerdict(ctx.config, d.runner, output, exit);
-    const verdict = extra?.verdict ?? parsed.verdict;
+    let verdict = extra?.verdict ?? parsed.verdict;
     let signal = extra?.signal ?? parsed.signal;
+    const errorSearch = analysis.filterPatterns.length > 0 ? analysis.filterPatterns.every((p) => !p.startsWith("!") && ERROR_PATTERN_RE.test(p)) : analysis.countOnly && d.category !== "build";
+    if (verdict === "inconclusive" && exit === null && filtered && d.category !== "test" && errorSearch) {
+      // The agent searched the output for error lines.
+      if (analysis.countOnly) {
+        const count = countedMatches(output, parsedCommand, analysis.pipelineEnd);
+        if (count === 0) {
+          verdict = "pass";
+          signal = "count-zero";
+        } else if (count !== null && count > 0) {
+          verdict = "fail";
+          signal = "count-nonzero";
+        }
+      } else if (isSilent(output)) {
+        verdict = "pass";
+        signal = "grep-empty";
+      }
+    }
+    if (verdict === "inconclusive" && exit === null && (d.category === "typecheck" || d.category === "lint") && !hasFailSignal(d.category, combined)) {
+      // A typecheck or lint tool prints its findings first, so a `head` of at least three lines would show
+      // an error line, and an error search that found nothing means there was nothing to find.
+      if (analysis.headLines !== null && analysis.headLines >= 3 && !analysis.filtered) {
+        verdict = "pass";
+        signal = "head-no-errors";
+      } else if (analysis.filtered && errorSearch && !analysis.countOnly) {
+        verdict = "pass";
+        signal = "grep-no-errors";
+      }
+    }
+    if (recovered !== null && verdict !== "inconclusive") signal = `${signal}+exit-from-echo`;
     if (signalNote && verdict === "inconclusive") signal = signalNote;
     const cwd = resolve(input.cwd, d.cd ?? ".");
-    const redirectTarget = analysis.reasons.map((r) => (r.startsWith("redirect:") ? r.slice(9) : null)).find((r): r is string => r !== null) ?? null;
+    const via = /^(?:npm|pnpm|yarn|bun) /.test(d.runner) ? scriptVia(output) : undefined;
     const receipt = base(d, {
       cwd,
       exit,
@@ -402,6 +531,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
       counts: parsed.counts,
       signal,
       masked: analysis.masked,
+      ...(via ? { via } : {}),
       ...(analysis.reasons.length ? { maskReason: analysis.reasons.join(",") } : {}),
       ...(redirectTarget && verdict === "inconclusive" ? { logFile: resolve(cwd, redirectTarget) } : {}),
       wrapped: false,

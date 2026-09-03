@@ -36,7 +36,12 @@ function evidenceOf(r: Receipt): NonNullable<Verdict["evidence"]> {
 /** Picks the receipt that answers a claim, or null. */
 export function selectReceipt(claim: Claim, receipts: Receipt[]): { receipt: Receipt | null; note?: string } {
   const categories = new Set<Category>([claim.category, ...(claim.alternates ?? [])]);
-  const candidates = latestFirst(receipts.filter((r) => categories.has(r.category)));
+  let candidates = latestFirst(receipts.filter((r) => categories.has(r.category)));
+  // "ruff clean" is about ruff runs even when a JavaScript linter ran later.
+  if (claim.tool) {
+    const named = candidates.filter((r) => `${r.runner} ${r.cmd} ${r.via ?? ""}`.toLowerCase().includes(claim.tool as string));
+    if (named.length > 0) candidates = named;
+  }
   if (candidates.length === 0) return { receipt: null };
   const latest = candidates[0] as Receipt;
   if (claim.scope === "some") return { receipt: latest };
@@ -52,22 +57,25 @@ const CODE_EXT_RE = /\.(?:py|pyi|ts|tsx|mts|cts|js|jsx|mjs|cjs|go|rs|java|kt|kts
 /** Files without an extension that still shape a build or a test run. */
 const CODE_BARE_RE = /^(?:Makefile|GNUmakefile|Dockerfile|Rakefile|Gemfile|Justfile|Procfile|Brewfile|Podfile|Vagrantfile|Jenkinsfile|Earthfile|BUILD|WORKSPACE|Pipfile|Cargo|Containerfile|\.env|\.envrc|\.gitmodules|\.npmrc|\.nvmrc|\.node-version|\.python-version|\.ruby-version|\.tool-versions|\.babelrc|\.eslintrc|\.prettierrc|\.editorconfig|\.flake8|\.pylintrc|\.mocharc|\.swcrc)$/;
 
-/** True when an edit to `path` can affect a verification run. */
-export function affectsVerification(path: string | null, ignore: (p: string) => boolean): boolean {
+/** True when an edit to `path` can affect a verification run. `cwd` is the project the run belongs to. */
+export function affectsVerification(path: string | null, ignore: (p: string) => boolean, cwd?: string): boolean {
   if (path === null) return true;
   const normalized = path.replace(/\\/g, "/");
   const name = normalized.split("/").pop() ?? normalized;
   if (ignore(name) || ignore(normalized)) return false;
   if (/\.(?:out|log|txt|tmp|bak|orig|rej|swp|pid|cache|snap)$/i.test(name)) return false;
   if (normalized.startsWith("/dev/")) return false;
+  // Scratch files and the agent's own notes live outside the project.
+  const insideProject = cwd !== undefined && cwd.length > 1 && normalized.startsWith(cwd.replace(/\\/g, "/").replace(/\/+$/, "") + "/");
+  if (!insideProject && (/^\/(?:tmp|private\/tmp|private\/var|var\/folders|var\/tmp)\//.test(normalized) || /\/\.claude\/|\/scratchpad\//.test(normalized))) return false;
   if (CODE_BARE_RE.test(name)) return true;
   if (name.startsWith(".") && /^\.[^.]+\.(?:json|js|cjs|mjs|ts|yml|yaml|toml)$/.test(name)) return true;
   return CODE_EXT_RE.test(name);
 }
 
-function editsAfter(r: Receipt, edits: EditEvent[], config: Config): EditEvent[] {
+function editsAfter(r: Receipt, edits: EditEvent[], config: Config, cwd: string): EditEvent[] {
   const ignore = pathIgnorer(config.fingerprintIgnore);
-  return edits.filter((e) => e.ts > r.ts && affectsVerification(e.path, ignore)).sort((a, b) => (a.ts < b.ts ? -1 : 1));
+  return edits.filter((e) => e.ts > r.ts && affectsVerification(e.path, ignore, cwd)).sort((a, b) => (a.ts < b.ts ? -1 : 1));
 }
 
 /** Evaluates every claim against the session's evidence. */
@@ -75,6 +83,10 @@ export function evaluate(input: GateInput): Verdict[] {
   const out: Verdict[] = [];
   const ttlMs = input.config.deferredTtlMinutes * 60_000;
   const nowMs = Date.parse(input.now);
+  // For "everything green" claims: the round of checks since the last code edit is what "everything" means.
+  const ignoreForEdits = pathIgnorer(input.config.fingerprintIgnore);
+  const lastEditTs = input.edits.filter((e) => affectsVerification(e.path, ignoreForEdits, input.cwd)).reduce((acc, e) => (e.ts > acc ? e.ts : acc), "");
+  const verifiedSinceEdit = lastEditTs !== "" && input.receipts.some((r) => r.ts > lastEditTs);
   for (const claim of input.claims) {
     const header = { category: claim.category, text: claim.text, scope: claim.scope, qualified: claim.qualified };
     const decide = (kind: VerdictKind, evidence: Verdict["evidence"], freshness: Verdict["freshness"], note?: string): Verdict => {
@@ -104,13 +116,19 @@ export function evaluate(input: GateInput): Verdict[] {
       out.push(decide("NONE", null, noFreshness, note ?? "no verification run recorded in this session"));
       continue;
     }
+    if (claim.expanded && verifiedSinceEdit && r.ts <= lastEditTs) {
+      out.push(decide("NONE", evidenceOf(r), noFreshness, `not part of the checks run since the last edit (latest ${claim.category} run ${r.id} predates it)`));
+      continue;
+    }
     const evidence = evidenceOf(r);
     let countsNote: string | undefined;
     if (claim.counts?.passed !== undefined && r.counts.passed !== undefined && claim.counts.passed !== r.counts.passed) {
       countsNote = `counts_match: false (claim says ${claim.counts.passed}, run reported ${r.counts.passed})`;
     }
     if (r.verdict === "fail") {
-      out.push(decide("FAILED", evidence, noFreshness, countsNote));
+      const newerSubsets = input.receipts.filter((x) => x.category === r.category && x.ts > r.ts && x.scope === "subset" && x.verdict === "pass").length;
+      const subsetNote = newerSubsets > 0 ? `${newerSubsets} later subset run${newerSubsets === 1 ? "" : "s"} passed but did not cover the whole suite` : undefined;
+      out.push(decide("FAILED", evidence, noFreshness, [countsNote, subsetNote].filter(Boolean).join("; ") || undefined));
       continue;
     }
     if (r.verdict === "inconclusive") {
@@ -120,7 +138,7 @@ export function evaluate(input: GateInput): Verdict[] {
     }
     const now = input.fingerprintFor(r.cwd);
     const cmp = compareFingerprints(r.fingerprint, now);
-    const later = editsAfter(r, input.edits, input.config);
+    const later = editsAfter(r, input.edits, input.config, input.cwd);
     if (cmp === "different") {
       out.push(decide("STALE", evidence, { fingerprintMatch: false, editsAfter: later }, countsNote));
       continue;

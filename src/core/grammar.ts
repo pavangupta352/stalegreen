@@ -60,6 +60,8 @@ export interface Receipt {
   toolUseId?: string;
   /** The file a redirected run wrote to; a later read of it supplies the missing output. */
   logFile?: string;
+  /** The underlying tool a package script ran, read from its banner, for example `eslint .`. */
+  via?: string;
 }
 
 export interface EditEvent {
@@ -83,6 +85,10 @@ export interface Claim {
   counts?: Counts;
   /** Receipts in these categories also satisfy the claim, for example a typecheck receipt for "compiles cleanly". */
   alternates?: Category[];
+  /** Came from an "everything green" form: only categories verified since the last edit are held to it. */
+  expanded?: boolean;
+  /** A tool named in the claim ("ruff clean", "tsc passes"); runs of that tool are preferred as evidence. */
+  tool?: string;
 }
 
 export type VerdictKind = "FRESH" | "STALE" | "FAILED" | "MASKED" | "NONE" | "DEFERRED";

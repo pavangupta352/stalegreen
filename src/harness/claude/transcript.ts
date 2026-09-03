@@ -214,7 +214,7 @@ function persistedOutput(tur: Record<string, unknown>, max: number): string | nu
 }
 
 /** Reads one transcript file into timeline events. */
-export async function readClaudeEvents(file: string, scope: Scope, opts: ReplayOptions, meta: { entrypoint: string | null; models: Record<string, number>; assistantMessages: number; toolCalls: number; badLines: number; firstTs: string | null; lastTs: string | null }): Promise<Event[]> {
+export async function readClaudeEvents(file: string, scope: Scope, opts: ReplayOptions, meta: { entrypoint: string | null; cwd?: string | null; models: Record<string, number>; assistantMessages: number; toolCalls: number; badLines: number; firstTs: string | null; lastTs: string | null }): Promise<Event[]> {
   const events: Event[] = [];
   const pending = new Map<string, { name: string; input: Record<string, unknown>; ts: string }>();
   const toolMessageIds = new Set<string>();
@@ -234,6 +234,7 @@ export async function readClaudeEvents(file: string, scope: Scope, opts: ReplayO
       if (!meta.lastTs || ts > meta.lastTs) meta.lastTs = ts;
     }
     if (typeof record.entrypoint === "string" && !meta.entrypoint) meta.entrypoint = record.entrypoint;
+    if (typeof record.cwd === "string" && scope === "main" && !meta.cwd) meta.cwd = record.cwd;
     const msg = record.message ?? {};
     const content = msg.content;
     if (record.type === "assistant" && Array.isArray(content)) {
@@ -309,7 +310,7 @@ function byTime(a: Event, b: Event): number {
 /** Replays one session (with its subagents) through the receipt builder and the gate. */
 export async function replayClaudeSession(file: string, opts: ReplayOptions = {}): Promise<SessionReplay> {
   const config = opts.config ?? DEFAULT_CONFIG;
-  const meta = { entrypoint: null as string | null, models: {} as Record<string, number>, assistantMessages: 0, toolCalls: 0, badLines: 0, firstTs: null as string | null, lastTs: null as string | null };
+  const meta = { entrypoint: null as string | null, cwd: null as string | null, models: {} as Record<string, number>, assistantMessages: 0, toolCalls: 0, badLines: 0, firstTs: null as string | null, lastTs: null as string | null };
   const session = basename(file, ".jsonl");
   let events = await readClaudeEvents(file, "main", opts, meta);
   const subs = opts.includeSubagents === false ? [] : subagentFilesFor(file);
@@ -374,7 +375,7 @@ export async function replayClaudeSession(file: string, opts: ReplayOptions = {}
     const found = dedupeClaims(extractClaims(e.text));
     if (found.length === 0) continue;
     claims += found.length;
-    const result = evaluate({ claims: found, receipts, edits, deferred: [], now: e.ts, cwd: "/", config, fingerprintFor: () => unavailable, blockedThisTurn: new Set() });
+    const result = evaluate({ claims: found, receipts, edits, deferred: [], now: e.ts, cwd: meta.cwd ?? "/", config, fingerprintFor: () => unavailable, blockedThisTurn: new Set() });
     for (let i = 0; i < result.length; i++) {
       const v = result[i] as Verdict;
       const claim = found[i] as Claim;
