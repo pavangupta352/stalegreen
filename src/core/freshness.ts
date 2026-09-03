@@ -47,11 +47,27 @@ export function selectReceipt(claim: Claim, receipts: Receipt[]): { receipt: Rec
   return { receipt: latestAll };
 }
 
+/** File types whose edits can change a verification result. */
+const CODE_EXT_RE = /\.(?:py|pyi|ts|tsx|mts|cts|js|jsx|mjs|cjs|go|rs|java|kt|kts|swift|rb|php|c|cc|cpp|h|hpp|cs|vue|svelte|sql|prisma|json|toml|yaml|yml|ini|cfg|sh|bash|zsh|css|scss|less|html|env|lock|graphql|gql|proto|ex|exs|dart|scala|elm|hs|zig|lua|pl|pm|r|m|mm|gradle|xml|tf|ipynb|erb|hbs|ejs|njk|astro|mdx|cmake|mk|nix|wxs|csproj|sln|fs|fsx|clj|cljs|edn|jl|nim|v|sv|vhd|mod|sum|txt\.in)$/i;
+/** Files without an extension that still shape a build or a test run. */
+const CODE_BARE_RE = /^(?:Makefile|GNUmakefile|Dockerfile|Rakefile|Gemfile|Justfile|Procfile|Brewfile|Podfile|Vagrantfile|Jenkinsfile|Earthfile|BUILD|WORKSPACE|Pipfile|Cargo|Containerfile|\.env|\.envrc|\.gitmodules|\.npmrc|\.nvmrc|\.node-version|\.python-version|\.ruby-version|\.tool-versions|\.babelrc|\.eslintrc|\.prettierrc|\.editorconfig|\.flake8|\.pylintrc|\.mocharc|\.swcrc)$/;
+
+/** True when an edit to `path` can affect a verification run. */
+export function affectsVerification(path: string | null, ignore: (p: string) => boolean): boolean {
+  if (path === null) return true;
+  const normalized = path.replace(/\\/g, "/");
+  const name = normalized.split("/").pop() ?? normalized;
+  if (ignore(name) || ignore(normalized)) return false;
+  if (/\.(?:out|log|txt|tmp|bak|orig|rej|swp|pid|cache|snap)$/i.test(name)) return false;
+  if (normalized.startsWith("/dev/")) return false;
+  if (CODE_BARE_RE.test(name)) return true;
+  if (name.startsWith(".") && /^\.[^.]+\.(?:json|js|cjs|mjs|ts|yml|yaml|toml)$/.test(name)) return true;
+  return CODE_EXT_RE.test(name);
+}
+
 function editsAfter(r: Receipt, edits: EditEvent[], config: Config): EditEvent[] {
   const ignore = pathIgnorer(config.fingerprintIgnore);
-  return edits.filter((e) => e.ts > r.ts && (e.path === null || !ignore(e.path.replace(/^.*?\/(?=[^/]+$)/, (m) => m))))
-    .filter((e) => e.path === null || !ignore(e.path.split("/").pop() ?? e.path))
-    .sort((a, b) => (a.ts < b.ts ? -1 : 1));
+  return edits.filter((e) => e.ts > r.ts && affectsVerification(e.path, ignore)).sort((a, b) => (a.ts < b.ts ? -1 : 1));
 }
 
 /** Evaluates every claim against the session's evidence. */

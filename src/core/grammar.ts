@@ -58,6 +58,8 @@ export interface Receipt {
   fingerprint: Fingerprint;
   log: string | null;
   toolUseId?: string;
+  /** The file a redirected run wrote to; a later read of it supplies the missing output. */
+  logFile?: string;
 }
 
 export interface EditEvent {

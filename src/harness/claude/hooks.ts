@@ -13,7 +13,7 @@ import { evaluate, formatBlockMessage } from "../../core/freshness.js";
 import type { Category, Fingerprint, Receipt } from "../../core/grammar.js";
 import { analyzeMasking } from "../../core/masking.js";
 import { parseOutput, type Detection } from "../../core/runners.js";
-import { detectRuns, MARKER_RE, readDeferred, readEdits, readReceipts, recordRun, runLogPath, type DeferredRun, type PendingRun, type VerdictRecord } from "../../core/receipts.js";
+import { detectRuns, MARKER_RE, readDeferred, readEdits, readReceipts, recordRun, resolveLogRead, runLogPath, type DeferredRun, type PendingRun, type VerdictRecord } from "../../core/receipts.js";
 import { planRewrite, unfilteredCommand, type RewriteTarget } from "../../core/rewrite.js";
 import { parseCommand } from "../../core/shell.js";
 import { appendJsonl, deriveSession, ensureDir, nextReceiptId, readJsonFile, sessionDir, writeJsonFile } from "../../core/store.js";
@@ -143,6 +143,12 @@ function postToolUse(input: Input, cwd: string, config: Config, root: string, ag
       }
     } else if (detections.length > 0 || hasMarker) {
       recordRun({ command, stdout, stderr, exit, interrupted, cwd, toolUseId: str(input.tool_use_id) }, { harness: "claude", root, agent, config, now: ts });
+    } else {
+      const read = resolveLogRead({ command, stdout, stderr, exit, interrupted, cwd, toolUseId: str(input.tool_use_id) }, { harness: "claude", root, agent, config, now: ts }, readReceipts(root));
+      if (read) {
+        read.id = nextReceiptId(dir);
+        appendJsonl(join(dir, "receipts.jsonl"), read);
+      }
     }
     for (const e of editsFromBash(command)) appendJsonl(join(dir, "edits.jsonl"), toEditEvent(e, ts, agent));
     return { exit: 0 };

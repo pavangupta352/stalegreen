@@ -128,6 +128,50 @@ describe("freshness gate end to end", () => {
     expect(r.stderr).toMatch(/without the pipe/);
   });
 
+  it("lets a fully visible summary stand in for a hidden exit status, but not a filtered one", () => {
+    runClaudeHook("PostToolUse", bashDone("npx vitest run 2>&1 | tail -20", vitestPass, 0));
+    expect(readReceipts(SESSION)[0]).toMatchObject({ masked: true, exit: null, verdict: "pass", signal: "summary-only:vitest-passed" });
+    expect(runClaudeHook("Stop", stopWith("All 41 tests pass.")).exit).toBe(0);
+    runClaudeHook("PostToolUse", bashDone("npx vitest run 2>&1 | grep -c passed", "1\n", 0));
+    expect(readReceipts(SESSION)[1]).toMatchObject({ masked: true, verdict: "inconclusive" });
+    expect(runClaudeHook("Stop", stopWith("All 41 tests pass.", { prompt_id: "p2" })).exit).toBe(2);
+    runClaudeHook("PostToolUse", bashDone("npx tsc --noEmit 2>&1 | tail -20", "", 0));
+    expect(readReceipts(SESSION)[2]).toMatchObject({ category: "typecheck", masked: true, verdict: "pass", signal: "silent-through-pipe" });
+    // Through `tail -1`, empty output means nothing was printed at all; a lone blank line could hide a summary.
+    runClaudeHook("PostToolUse", bashDone("npx tsc --noEmit 2>&1 | tail -1", "\n", 0));
+    expect(readReceipts(SESSION)[3]).toMatchObject({ verdict: "inconclusive" });
+    runClaudeHook("PostToolUse", bashDone("npx vitest run 2>&1 | tail -20", vitestFail, 0));
+    expect(readReceipts(SESSION)[4]).toMatchObject({ masked: true, exit: null, verdict: "fail" });
+    // A head that shows fewer lines than its limit showed everything.
+    runClaudeHook("PostToolUse", bashDone("npx tsc --noEmit 2>&1 | head -20", "", 0));
+    expect(readReceipts(SESSION)[5]).toMatchObject({ category: "typecheck", verdict: "pass", signal: "silent-through-pipe" });
+    runClaudeHook("PostToolUse", bashDone("npx vitest run 2>&1 | head -3", " RUN v3\n\n ✓ a.test.ts (1 test)\n", 0));
+    expect(readReceipts(SESSION)[6]).toMatchObject({ verdict: "inconclusive" });
+    // One-line summaries are trusted through a filter; silence is not.
+    runClaudeHook("PostToolUse", bashDone("pytest -q 2>&1 | grep -E 'passed|failed'", "========= 41 passed in 1.20s =========\n", 0));
+    expect(readReceipts(SESSION)[7]).toMatchObject({ verdict: "pass", signal: "summary-line:pytest-passed" });
+    runClaudeHook("PostToolUse", bashDone("go test ./... 2>&1 | grep ok", "ok  \texample.com/app/holds\t0.412s\n", 0));
+    expect(readReceipts(SESSION)[8]).toMatchObject({ verdict: "inconclusive" });
+    runClaudeHook("PostToolUse", bashDone("npx eslint . 2>&1 | grep error", "", 0));
+    expect(readReceipts(SESSION)[9]).toMatchObject({ verdict: "inconclusive" });
+  });
+
+  it("uses a later read of a redirected log as the run's output", () => {
+    runClaudeHook("PostToolUse", bashDone("npm test > /tmp/sg-test.out 2>&1; echo done", "done\n", 0));
+    const first = readReceipts(SESSION)[0]!;
+    expect(first).toMatchObject({ verdict: "inconclusive", masked: true, logFile: "/tmp/sg-test.out" });
+    expect(runClaudeHook("Stop", stopWith("All 41 tests pass.")).exit).toBe(2);
+    runClaudeHook("PostToolUse", bashDone("tail -30 /tmp/sg-test.out", vitestPass, 0));
+    const read = readReceipts(SESSION)[1]!;
+    expect(read).toMatchObject({ id: "r-0002", verdict: "pass", cmd: "npm test > /tmp/sg-test.out 2>&1", runner: "npm test", category: "test", counts: { passed: 41 }, signal: "log-read:summary-only:vitest-passed", maskReason: "redirect:/tmp/sg-test.out,semicolon,read" });
+    expect(runClaudeHook("Stop", stopWith("All 41 tests pass.", { prompt_id: "p2" })).exit).toBe(0);
+    runClaudeHook("PostToolUse", bashDone("npm test > /tmp/sg-test.out 2>&1; echo done", "done\n", 0));
+    runClaudeHook("PostToolUse", bashDone("grep -c passed /tmp/sg-test.out", "1\n", 0));
+    expect(readReceipts(SESSION)).toHaveLength(3);
+    runClaudeHook("PostToolUse", bashDone("cat /tmp/sg-test.out", vitestFail, 0));
+    expect(readReceipts(SESSION)[3]).toMatchObject({ verdict: "fail", counts: { failed: 2 } });
+  });
+
   it("allows a claim with no receipt by default and blocks it in strict mode", () => {
     expect(runClaudeHook("Stop", stopWith("All tests pass.")).exit).toBe(0);
     expect(readVerdicts(SESSION).at(-1)?.verdicts[0]).toMatchObject({ verdict: "NONE", action: "allowed" });

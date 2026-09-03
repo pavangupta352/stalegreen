@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { classify, detect, detectAll, parseCounts, parseOutput, scriptCategory, stripWrappers } from "../src/core/runners.js";
+import { classify, detect, detectAll, isSilent, parseCounts, parseOutput, scriptCategory, stripWrappers } from "../src/core/runners.js";
 import type { Category, RunVerdict } from "../src/core/grammar.js";
 
 const fixtureDir = join(__dirname, "fixtures", "runner-output");
@@ -71,6 +71,25 @@ describe("parseOutput rules", () => {
     expect(parseCounts("test result: ok. 17 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out")).toEqual({ passed: 17, failed: 0, skipped: 1 });
     expect(parseCounts("28 examples, 1 failure, 2 pending")).toEqual({ total: 28, failed: 1, passed: 25, skipped: 2 });
     expect(parseCounts("✖ 3 problems (2 errors, 1 warning)")).toEqual({ errors: 2 });
+  });
+
+  it("treats package-manager banners as silence for silent-success tools", () => {
+    expect(isSilent("\n> app@0.1.0 typecheck\n> tsc --noEmit\n\n")).toBe(true);
+    expect(isSilent("\n> app@0.1.0 typecheck /work/app\n> tsc --noEmit\n\n")).toBe(true);
+    expect(isSilent("yarn run v1.22.19\n$ tsc --noEmit\nDone in 2.31s.\n")).toBe(true);
+    expect(isSilent("")).toBe(true);
+    expect(isSilent("src/a.ts(1,1): error TS2322: nope\n")).toBe(false);
+    expect(parseOutput("typecheck", "\n> app@0.1.0 typecheck\n> tsc --noEmit\n\n", { exit: null, outputVisible: true }).verdict).toBe("pass");
+    expect(parseOutput("typecheck", "\n> app@0.1.0 typecheck\n> tsc --noEmit\n\nsrc/a.ts(1,1): error TS2322: nope\n", { exit: null, outputVisible: true }).verdict).toBe("fail");
+    expect(parseOutput("test", "", { exit: null, outputVisible: true }).verdict).toBe("inconclusive");
+  });
+
+  it("trusts one-line summaries through a filter but not multi-line ones", () => {
+    expect(parseOutput("test", "========= 41 passed in 1.20s =========\n", { exit: null, filtered: true })).toMatchObject({ verdict: "pass", signal: "summary-line:pytest-passed" });
+    expect(parseOutput("test", "ok  \texample.com/app\t0.4s\n", { exit: null, filtered: true }).verdict).toBe("inconclusive");
+    expect(parseOutput("test", "  12 passing (84ms)\n", { exit: null, filtered: true }).verdict).toBe("inconclusive");
+    expect(parseOutput("lint", "All checks passed!\n", { exit: null, filtered: true }).verdict).toBe("pass");
+    expect(parseOutput("lint", "", { exit: null, filtered: true }).verdict).toBe("inconclusive");
   });
 
   it("strips ANSI colours before matching", () => {

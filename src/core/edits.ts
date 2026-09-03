@@ -62,6 +62,9 @@ const FORMATTERS: { name: string; check: RegExp | null }[] = [
   { name: "oxlint", check: /^--fix$/ },
 ];
 
+/** Calls inside a heredoc script that change files on disk. */
+const HEREDOC_WRITE_RE = /\bopen\([^)]*['"][wax][bt+]*['"]|\.write_text\(|\.write_bytes\(|writeFileSync\(|writeFile\(|appendFileSync\(|fs\.write|\bshutil\.(?:copy|move|rmtree)|os\.(?:rename|remove|unlink|replace|makedirs|mkdir)|Path\([^)]*\)\.(?:unlink|rename|touch|mkdir)|File\.(?:write|open\([^)]*['"][wa])|IO\.write|fs\.rm|rmSync\(|renameSync\(|copyFileSync\(|mkdirSync\(|subprocess\.(?:run|call|check_output)\([^)]*(?:sed|mv|cp|rm|git)\b|\bsed -i\b|\bmv \b|\bcp \b|\brm \b/;
+
 function lastPositional(words: string[]): string | null {
   for (let i = words.length - 1; i >= 1; i--) {
     const w = words[i] as string;
@@ -133,6 +136,9 @@ function segmentEdits(seg: Segment): EditCandidate[] {
     if (w1 === "stash" && (words[2] === "list" || words[2] === "show")) return out;
     if (w1 === "worktree" && words[2] !== "add" && words[2] !== "remove") return out;
     if (w1 === "clean" && !words.some((w) => /^-[a-zA-Z]*f/.test(w))) return out;
+    // Creating a branch leaves the working tree as it is.
+    if ((w1 === "checkout" && words.some((w) => w === "-b" || w === "-B" || w === "--orphan")) || (w1 === "switch" && words.some((w) => w === "-c" || w === "-C" || w === "--orphan"))) return out;
+    if (w1 === "reset" && !words.some((w) => w === "--hard" || w === "--merge" || w === "--keep") && !words.includes("--")) return out;
     const dash = words.indexOf("--");
     const path = dash >= 0 && words[dash + 1] ? (words[dash + 1] as string) : null;
     out.push({ path, kind: `git ${w1}` });
@@ -155,10 +161,10 @@ export function editsFromBash(command: string): EditCandidate[] {
     if (seg.words.length === 0 && seg.redirects.length === 0) continue;
     out.push(...segmentEdits(seg));
   }
-  if (parsed.heredoc) {
-    // A heredoc feeding an interpreter can write anywhere; record it without a path.
+  if (parsed.heredoc && out.length === 0) {
+    // A heredoc feeding an interpreter can write anywhere; count it only when the script visibly writes.
     const feeds = parsed.segments.some((s) => s.redirects.some((r) => r.op.startsWith("<<")) && /^(?:python[0-9.]*|node|ruby|perl|php|sh|bash|zsh)$/.test((s.words[0] ?? "").replace(/^.*\//, "")));
-    if (feeds && out.length === 0) out.push({ path: null, kind: "heredoc" });
+    if (feeds && HEREDOC_WRITE_RE.test(command)) out.push({ path: null, kind: "heredoc" });
   }
   // Deduplicate identical events.
   const seen = new Set<string>();

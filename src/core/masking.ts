@@ -14,6 +14,10 @@ export interface MaskAnalysis {
   outputVisible: boolean;
   /** The agent's own `tail -n K` after the pipe, if any. */
   tailLines: number | null;
+  /** The agent's own `head -n K` after the pipe, if any. */
+  headLines: number | null;
+  /** The output went through a filter (grep, sed, awk, cut, wc, sort, uniq, tr) that can hide lines. */
+  filtered: boolean;
   pipefail: boolean;
   /** The segment is backgrounded with `&`. */
   background: boolean;
@@ -63,6 +67,8 @@ export function analyzeMasking(parsed: ParsedCommand, index: number): MaskAnalys
   let exitPreserved = true;
   let outputVisible = true;
   let tailLines: number | null = null;
+  let headLines: number | null = null;
+  let filtered = false;
   const pipefail = hasPipefail(parsed, index);
   let pipelineEnd = index;
 
@@ -98,7 +104,13 @@ export function analyzeMasking(parsed: ParsedCommand, index: number): MaskAnalys
     if (FILTERS.has(cmd)) {
       reasons.push(`pipe:${cmd}`);
       if (cmd === "tail") tailLines = tailCount(next.words);
-      else outputVisible = false;
+      else if (cmd === "head") {
+        headLines = tailCount(next.words);
+        outputVisible = false;
+      } else {
+        outputVisible = false;
+        filtered = true;
+      }
     } else if (PASSTHROUGH.has(cmd)) {
       reasons.push(`pipe:${cmd}`);
     } else {
@@ -146,5 +158,5 @@ export function analyzeMasking(parsed: ParsedCommand, index: number): MaskAnalys
   if ((parsed.segments[k] as Segment).background) background = true;
 
   const masked = reasons.some((r) => r !== "devnull:stderr") || !exitPreserved;
-  return { masked, reasons, exitPreserved, outputVisible, tailLines, pipefail, background, pipelineEnd };
+  return { masked, reasons, exitPreserved, outputVisible, tailLines, headLines, filtered, pipefail, background, pipelineEnd };
 }

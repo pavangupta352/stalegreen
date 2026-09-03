@@ -51,6 +51,17 @@ export interface ParseResult {
 export interface ParseOptions {
   exit: number | null;
   interrupted?: boolean;
+  /**
+   * When the exit status is unknown but the end of the output is fully
+   * visible (a `tail`, `cat`, `tee`, `|| true` or `;` chain), the runner's own
+   * summary decides. Filters and redirects leave this false.
+   */
+  outputVisible?: boolean;
+  /**
+   * The output went through a filter such as `grep`: only self-contained
+   * one-line summaries are trusted, and silence proves nothing.
+   */
+  filtered?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -797,8 +808,8 @@ const SIGNALS: Signal[] = [
   { id: "eslint-config-error", category: "lint", kind: "fail", re: /^Oops! Something went wrong!|ESLint couldn't find|Error: Cannot find module/m },
   { id: "biome-errors", category: "lint", kind: "fail", re: /^Found [1-9]\d* errors?\.\s*$|^Checked \d+ files? in [^\n]*\. Found [1-9]\d* errors?/m },
   { id: "biome-ok", category: "lint", kind: "pass", re: /^Checked (\d+) files? in [^\n]*\. No fixes (?:needed|applied)\.|^Checked (\d+) files? in [^\n]*\. Fixed \d+ files?\./m },
-  { id: "ruff-found", category: "lint", kind: "fail", re: /^Found [1-9]\d* errors?\.?\s*(?:\(\d+ fixable[^)]*\))?\s*$/m },
-  { id: "ruff-ok", category: "lint", kind: "pass", re: /^All checks passed!/m },
+  { id: "ruff-found", category: "lint", kind: "fail", re: /^Found [1-9]\d* errors?\.?\s*(?:\(\d+ fixable[^)]*\))?\s*$|^Found [1-9]\d* errors? \(\d+ fixed, [1-9]\d* remaining\)/m },
+  { id: "ruff-ok", category: "lint", kind: "pass", re: /^All checks passed!|^Found \d+ errors? \(\d+ fixed, 0 remaining\)/m },
   { id: "ruff-format-would", category: "lint", kind: "fail", re: /^[1-9]\d* files? would be reformatted/m },
   { id: "ruff-format-ok", category: "lint", kind: "pass", re: /^(\d+) files? already formatted\s*$/m },
   { id: "black-would", category: "lint", kind: "fail", re: /^would reformat |^[1-9]\d* files? would be reformatted/m },
@@ -872,12 +883,23 @@ const SIGNALS: Signal[] = [
   { id: "elm-make-error", category: "build", kind: "fail", re: /^-- [A-Z ]+ -+ /m },
   { id: "elm-make-ok", category: "build", kind: "pass", re: /^Success! Compiled \d+ modules?\./m },
   { id: "parcel-ok", category: "build", kind: "pass", re: /(?:✨|Built) [Bb]uilt in [\d.]+ ?m?s/m },
-  { id: "traceback", category: "*", kind: "fail", re: /^Traceback \(most recent call last\):/m },
-  { id: "node-uncaught", category: "*", kind: "fail", re: /^Uncaught (?:Error|TypeError|ReferenceError|SyntaxError)|^node:internal\/modules\/cjs\/loader:\d+\n\s+throw err;/m },
-  { id: "command-not-found", category: "*", kind: "fail", re: /command not found|No such file or directory|is not recognized as an internal or external command|^sh: \d+: [^\n]+: not found/m },
+  // A traceback is a failure for tools that should never print one; test runners print them for failing tests and summarise anyway.
+  { id: "traceback", category: "typecheck", kind: "fail", re: /^Traceback \(most recent call last\):/m },
+  { id: "traceback-lint", category: "lint", kind: "fail", re: /^Traceback \(most recent call last\):/m },
+  { id: "traceback-build", category: "build", kind: "fail", re: /^Traceback \(most recent call last\):/m },
+  { id: "node-uncaught", category: "*", kind: "fail", re: /^node:internal\/modules\/cjs\/loader:\d+\n\s+throw err;/m },
+  { id: "command-not-found", category: "*", kind: "fail", re: /^(?:[^\n:]{0,60}: )?(?:line \d+: )?[^\n:]{1,80}: command not found\s*$|^(?:sh|bash|zsh|dash|\/bin\/sh): \d+: [^\n]+: not found\s*$|^(?:sh|bash|zsh|dash|\/bin\/sh): (?:line \d+: )?[^\n]+: No such file or directory\s*$|^'[^\n']+' is not recognized as an internal or external command/m },
 ];
 
-const COUNT_PATTERNS: { re: RegExp; last?: boolean; map: (m: RegExpMatchArray) => Counts }[] = [
+/** Pass signals that are one self-contained summary line, trustworthy even when a filter pipe hid the rest of the output. */
+const SINGLE_LINE_SUMMARY = new Set([
+  "pytest-passed", "pytest-short-passed", "jest-passed", "vitest-passed", "rspec-passed", "phpunit-passed", "mix-passed", "dotnet-passed", "nextest-passed", "playwright-passed", "ctest-passed", "jasmine-passed", "minitest-passed", "deno-pass", "dart-test-passed", "elm-test-passed", "sbt-test-passed", "cypress-passed", "gradle-test-passed", "maven-passed",
+  "tsc-found-zero", "svelte-check-ok", "mypy-ok", "pyright-ok", "flow-ok", "phpstan-ok", "sorbet-ok", "dialyzer-ok",
+  "ruff-ok", "ruff-format-ok", "black-ok", "biome-ok", "rubocop-ok", "oxlint-ok", "prettier-ok", "golangci-ok", "credo-ok", "swiftlint-ok", "dart-analyze-ok", "pylint-ok",
+  "next-ok", "vite-ok", "webpack-ok", "tsup-ok", "rollup-ok", "turbo-ok", "gradle-build-ok", "maven-build-ok", "dotnet-build-ok", "xcodebuild-ok", "swift-build-ok", "docker-ok", "elm-make-ok", "parcel-ok", "python-build-ok", "esbuild-ok", "ninja-ok",
+]);
+
+const COUNT_PATTERNS: { re: RegExp; last?: boolean; only?: Category[]; map: (m: RegExpMatchArray) => Counts }[] = [
   // pytest summary: "= 1 failed, 40 passed, 2 skipped in 3.2s ="
   { re: /=+ ((?:\d+ (?:passed|failed|errors?|skipped|deselected|xfailed|xpassed|warnings?)(?:, )?)+) in [\d.]+s/, map: (m) => tallies(m[1] as string) },
   { re: /^\s*((?:\d+ (?:passed|failed|errors?|skipped|deselected|xfailed|xpassed|warnings?)(?:, )?)+) in [\d.]+s\s*$/m, map: (m) => tallies(m[1] as string) },
@@ -928,13 +950,14 @@ const COUNT_PATTERNS: { re: RegExp; last?: boolean; map: (m: RegExpMatchArray) =
   // ava
   { re: /^\s*(\d+) tests? passed(?:\n\s*(\d+) tests? failed)?/m, map: (m) => ({ passed: Number(m[1]), ...(m[2] ? { failed: Number(m[2]) } : {}) }) },
   // typecheck and lint error counts
-  { re: /^Found (\d+) errors?(?: in \d+ files?)?/m, map: (m) => ({ errors: Number(m[1]) }) },
-  { re: /^(\d+) errors?, (\d+) warnings?/m, map: (m) => ({ errors: Number(m[1]) }) },
-  { re: /✖ (\d+) problems? \((\d+) errors?, (\d+) warnings?\)/m, map: (m) => ({ errors: Number(m[2]) }) },
-  { re: /(\d+) offenses? detected/m, map: (m) => ({ errors: Number(m[1]) }) },
-  { re: /svelte-check found (\d+) errors?/m, map: (m) => ({ errors: Number(m[1]) }) },
-  { re: /Found \d+ warnings? and (\d+) errors?/m, map: (m) => ({ errors: Number(m[1]) }) },
+  { re: /^Found (\d+) errors?(?: in \d+ files?)?/m, only: ["typecheck", "lint", "build"], map: (m) => ({ errors: Number(m[1]) }) },
+  { re: /^(\d+) errors?, (\d+) warnings?/m, only: ["typecheck", "lint", "build"], map: (m) => ({ errors: Number(m[1]) }) },
+  { re: /✖ (\d+) problems? \((\d+) errors?, (\d+) warnings?\)/m, only: ["lint"], map: (m) => ({ errors: Number(m[2]) }) },
+  { re: /(\d+) offenses? detected/m, only: ["lint"], map: (m) => ({ errors: Number(m[1]) }) },
+  { re: /svelte-check found (\d+) errors?/m, only: ["typecheck"], map: (m) => ({ errors: Number(m[1]) }) },
+  { re: /Found \d+ warnings? and (\d+) errors?/m, only: ["lint"], map: (m) => ({ errors: Number(m[1]) }) },
 ];
+const TEST_ONLY_COUNT = COUNT_PATTERNS.length - 6;
 
 function tallies(s: string): Counts {
   const out: Counts = {};
@@ -949,9 +972,12 @@ function tallies(s: string): Counts {
   return out;
 }
 
-/** Reads counts from runner output, first match wins. */
-export function parseCounts(output: string): Counts {
-  for (const p of COUNT_PATTERNS) {
+/** Reads counts from runner output, first match wins. Test tallies apply to the test category only. */
+export function parseCounts(output: string, category?: Category): Counts {
+  for (let i = 0; i < COUNT_PATTERNS.length; i++) {
+    const p = COUNT_PATTERNS[i]!;
+    if (category && i < TEST_ONLY_COUNT && category !== "test") continue;
+    if (category && p.only && !p.only.includes(category)) continue;
     if (p.last) {
       const all = [...output.matchAll(p.re)];
       const m = all[all.length - 1];
@@ -980,6 +1006,16 @@ function matchingSignals(category: Category, output: string): { pass: string[]; 
   return { pass, fail, notrun };
 }
 
+/** Lines a package manager prints around a script: the script banner, yarn's chatter, a trailing "Done in". */
+const BANNER_LINE = /^(?:>\s.*|\$ .*|yarn run v[\d.]+|(?:✨\s+)?Done in [\d.]+m?s\.?|info Visit https:\/\/yarnpkg\.com.*|\[stalegreen\] .*|npm warn .*|npm notice .*|\s*)$/;
+
+/** True when the output carries nothing beyond package-manager banners, so a silent-success tool printed nothing. */
+export function isSilent(output: string): boolean {
+  return cleanOutput(output)
+    .split("\n")
+    .every((line) => BANNER_LINE.test(line));
+}
+
 /** Removes ANSI colour codes and carriage-return progress noise. */
 export function cleanOutput(output: string): string {
   return output
@@ -998,7 +1034,7 @@ export function cleanOutput(output: string): string {
 export function parseOutput(category: Category, rawOutput: string, opts: ParseOptions): ParseResult {
   const output = cleanOutput(rawOutput ?? "");
   const { pass, fail, notrun } = matchingSignals(category, output);
-  const counts = parseCounts(output);
+  const counts = parseCounts(output, category);
   const base = { counts, passSignals: pass, failSignals: fail };
   if (opts.interrupted) return { ...base, verdict: "inconclusive", signal: "interrupted" };
   if (opts.exit !== null && opts.exit !== undefined && opts.exit !== 0) {
@@ -1009,6 +1045,12 @@ export function parseOutput(category: Category, rawOutput: string, opts: ParseOp
   }
   if (opts.exit === null || opts.exit === undefined) {
     if (fail.length > 0) return { ...base, verdict: "fail", signal: fail[0] as string };
+    if (opts.outputVisible && pass.length > 0) return { ...base, verdict: "pass", signal: `summary-only:${pass[0]}` };
+    if (opts.outputVisible && category !== "test" && isSilent(output)) return { ...base, verdict: "pass", signal: "silent-through-pipe" };
+    if (opts.filtered) {
+      const trusted = pass.find((id) => SINGLE_LINE_SUMMARY.has(id));
+      if (trusted) return { ...base, verdict: "pass", signal: `summary-line:${trusted}` };
+    }
     return { ...base, verdict: "inconclusive", signal: "exit-unknown" };
   }
   if (fail.length > 0 && pass.length === 0) return { ...base, verdict: "inconclusive", signal: `exit-0-with-${fail[0]}` };

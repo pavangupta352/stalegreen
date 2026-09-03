@@ -67,6 +67,8 @@ export interface ReceiptContext {
   agent: string | null;
   config: Config;
   now?: string;
+  /** Overrides the fingerprint computation, for example during a transcript replay where no tree exists. */
+  fingerprintFor?: (cwd: string) => Fingerprint;
 }
 
 export const MARKER_RE = /\[stalegreen\] exit=(-?\d+) receipt=([\w-]+)(?: lines=(\d+))?(?: log=(\S+))?/;
@@ -134,6 +136,13 @@ export function detectRuns(command: string, config: Config, parsed?: ParsedComma
   return found;
 }
 
+/** Number of lines in a chunk of output, blank lines included, so a lone newline counts as one. */
+function countLines(text: string): number {
+  if (text.length === 0) return 0;
+  const parts = text.split("\n");
+  return text.endsWith("\n") ? parts.length - 1 : parts.length;
+}
+
 function truncateLog(text: string, max: number): string {
   if (text.length <= max) return text;
   const head = Math.floor(max * 0.2);
@@ -176,6 +185,8 @@ function maskingFor(parsed: ParsedCommand, d: Detection): MaskAnalysis {
     exitPreserved: outer.exitPreserved && inner.exitPreserved,
     outputVisible: outer.outputVisible && inner.outputVisible,
     tailLines: inner.tailLines ?? outer.tailLines,
+    headLines: inner.headLines ?? outer.headLines,
+    filtered: inner.filtered || outer.filtered,
     pipefail: inner.pipefail,
     background: outer.background || inner.background,
     pipelineEnd: outer.pipelineEnd,
@@ -199,7 +210,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
   const fingerprintFor = (cwd: string): Fingerprint => {
     let f = fingerprints.get(cwd);
     if (!f) {
-      f = computeFingerprint(cwd, { budgetMs: ctx.config.fingerprintBudgetMs, ignore: ctx.config.fingerprintIgnore });
+      f = ctx.fingerprintFor ? ctx.fingerprintFor(cwd) : computeFingerprint(cwd, { budgetMs: ctx.config.fingerprintBudgetMs, ignore: ctx.config.fingerprintIgnore });
       fingerprints.set(cwd, f);
     }
     return f;
@@ -287,16 +298,19 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
       else if (!anyFail && i === detections.length - 1) exit = input.exit;
       else signalNote = "compound-exit-unattributed";
     }
-    const parsed = parseOutput(d.category, output, { exit, interrupted: input.interrupted });
+    // A head or tail shows everything when the output is shorter than its line count (blank lines count).
+    const lines = countLines(output);
+    const complete = (analysis.tailLines !== null && lines < analysis.tailLines) || (analysis.headLines !== null && lines < analysis.headLines);
+    // A tail shorter than three lines can cut a multi-line summary; treat it like a filter, where one-line summaries still count.
+    const shortTail = analysis.tailLines !== null && analysis.tailLines < 3 && !complete;
+    const outputVisible = complete || (analysis.outputVisible && !shortTail);
+    const parsed = parseOutput(d.category, output, { exit, interrupted: input.interrupted, outputVisible, filtered: (analysis.filtered || shortTail) && !complete });
     const extra = extraVerdict(ctx.config, d.runner, output, exit);
-    let verdict = extra?.verdict ?? parsed.verdict;
+    const verdict = extra?.verdict ?? parsed.verdict;
     let signal = extra?.signal ?? parsed.signal;
     if (signalNote && verdict === "inconclusive") signal = signalNote;
-    if (verdict === "pass" && analysis.masked && !analysis.exitPreserved) {
-      verdict = "inconclusive";
-      signal = "masked";
-    }
     const cwd = resolve(input.cwd, d.cd ?? ".");
+    const redirectTarget = analysis.reasons.map((r) => (r.startsWith("redirect:") ? r.slice(9) : null)).find((r): r is string => r !== null) ?? null;
     const receipt = base(d, {
       cwd,
       exit,
@@ -305,6 +319,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
       signal,
       masked: analysis.masked,
       ...(analysis.reasons.length ? { maskReason: analysis.reasons.join(",") } : {}),
+      ...(redirectTarget && verdict === "inconclusive" ? { logFile: resolve(cwd, redirectTarget) } : {}),
       wrapped: false,
       ...(pending?.unwrapped ? { unwrapped: pending.unwrapped } : {}),
       ...(d.quiet ? { quiet: true } : {}),
@@ -314,6 +329,54 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
     out.push({ receipt, output });
   });
   return out;
+}
+
+const LOG_READERS = new Set(["cat", "tail", "head", "less", "more", "grep", "egrep", "rg", "bat"]);
+
+/**
+ * When a verification run was redirected to a file and the agent later reads
+ * that file, the read is the run's visible output. Returns a receipt derived
+ * from the earlier one, or null when the command is not such a read.
+ */
+export function resolveLogRead(input: RunInput, ctx: ReceiptContext, receipts: Receipt[]): Receipt | null {
+  const parsed = parseCommand(input.command);
+  const seg = parsed.segments.find((s) => s.words.length > 0);
+  if (!seg || parsed.segments.filter((s) => s.words.length > 0).length !== 1) return null;
+  const words = seg.words;
+  const cmd = (words[0] ?? "").replace(/^.*\//, "");
+  if (!LOG_READERS.has(cmd)) return null;
+  const files = words.slice(1).filter((w) => !w.startsWith("-") && !/^\+?\d+$/.test(w));
+  const target = cmd === "grep" || cmd === "egrep" || cmd === "rg" ? files[files.length - 1] : files[0];
+  if (!target) return null;
+  const abs = resolve(input.cwd, target);
+  const candidates = receipts.filter((r) => r.verdict === "inconclusive" && r.logFile !== undefined && r.logFile === abs);
+  const original = candidates[candidates.length - 1];
+  if (!original) return null;
+  const output = `${input.stdout ?? ""}${input.stderr ? `\n${input.stderr}` : ""}`;
+  const lines = countLines(output);
+  let n: number | null = null;
+  for (let i = 1; i < words.length; i++) {
+    const w = words[i] as string;
+    const m = /^-n(\d+)$/.exec(w) ?? /^-(\d+)$/.exec(w) ?? /^--lines=(\d+)$/.exec(w);
+    if (m) n = Number(m[1]);
+    else if ((w === "-n" || w === "--lines") && words[i + 1]) n = Number(words[i + 1]) || null;
+  }
+  const complete = (cmd === "head" || cmd === "tail") && n !== null ? lines < n : cmd === "cat" || cmd === "less" || cmd === "more" || cmd === "bat";
+  const outputVisible = complete || cmd === "cat" || cmd === "tail" || cmd === "less" || cmd === "more" || cmd === "bat";
+  const filtered = cmd === "grep" || cmd === "egrep" || cmd === "rg" || (cmd === "head" && !complete);
+  const parsedOut = parseOutput(original.category, output, { exit: null, outputVisible, filtered });
+  if (parsedOut.verdict === "inconclusive") return null;
+  return {
+    ...original,
+    id: "r-?",
+    ts: ctx.now ?? new Date().toISOString(),
+    source: input.command,
+    verdict: parsedOut.verdict,
+    counts: parsedOut.counts,
+    signal: `log-read:${parsedOut.signal ?? "?"}`,
+    maskReason: `${original.maskReason ?? "redirect"},read`,
+    ...(input.toolUseId ? { toolUseId: input.toolUseId } : {}),
+  };
 }
 
 /** Builds and stores receipts, assigning ids and writing run logs. */
