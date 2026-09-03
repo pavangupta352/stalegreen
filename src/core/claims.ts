@@ -21,8 +21,12 @@ const UNCHECKED_TODO_RE = /^\s*(?:[-*+]\s*)?\[ \]/;
 /** List markers, quote markers and check marks at the start of a line. Numbers are kept unless they are list numbering. */
 const LEADING_NOISE_RE = /^(?:[\s\-*+>#|✓✔✅•·]+|\d+[.)]\s+)+/;
 
+/** Numbers as agents write them: 41, 1,025, 7542. */
+const NUM = "\\d{1,3}(?:,\\d{3})+|\\d+";
+
 /** Conditional, future, planning or instruction context anywhere in the sentence. */
 const CONDITIONAL_WORDS = [
+  "as soon as", "gates? (?:deploys?|merges?|releases?) on", "depends on", "conditional on", "on tests? passing", "only when", "only if",
   "make sure", "makes sure", "making sure", "ensure", "ensuring", "ensures", "until", "once", "if", "unless", "should", "will", "would", "could", "might", "may",
   "need(?:s|ed)? to", "must", "so that", "when", "whenever", "whether", "verify(?:ing)? (?:that|if|whether)", "to verify", "check(?:ed|ing|s)? (?:that|if|whether)", "to check",
   "confirm(?:ing)? (?:that|if|whether)", "to confirm", "expect(?:s|ed|ing)?", "assum(?:e|es|ing)", "let'?s", "let me", "going to", "gonna", "want(?:s|ed)?", "hope(?:fully)?",
@@ -49,9 +53,23 @@ const RELAYED_RE = new RegExp(
     "ci (?:is |are |was |went |stays |remains |all )?(?:green|passing|passes|passed|clean|happy)",
     "(?:github|gitlab) actions? (?:is |are |was )?(?:green|passing|passes|passed)",
     "the pipeline (?:is |was )?(?:green|passing|passes|passed)",
+    "^ci\\b",
+    "\\d+-way matrix",
+    "ci matrix",
+    "workflow runs?",
+    "actions? runs?",
   ].join("|"),
   "i",
 );
+
+/** A sentence about deployments, servers or monitoring, where "green" is not about local verification. */
+const OPERATIONS_RE = /\b(?:health(?:check)?s?|smoke|uptime|falco|pm2|endpoints?|probes?|live site|on prod|in production|production is|deployed|deploys?|served|cdn|status codes?|http \d{3}|\b\d{3} ok\b|200s?\b|500s?\b|infra|infrastructure|monitors?|dns|ssl|certificates?)\b/i;
+/** Sentences that mention a badge, label or heading are describing text, not reporting a run. */
+const MENTION_RE = /\b(?:badge|shields?\.io|label(?:led)?|heading|headline|placeholder|wording)\b/i;
+/** Tests done by hand or against a live system are not local verification runs. */
+const MANUAL_TEST_RE = /\b(?:live|manual|manually|supervised|smoke|browser|visual|hands-on) (?:\w+ )?tests?\b/i;
+/** Verification nouns that make an "everything green" claim about local checks. */
+const VERIFICATION_NOUN_RE = /\b(?:tests?|suite|tsc|typecheck|type-?check|types|lint|linter|eslint|ruff|clippy|mypy|pyright|builds?|compile[sd]?|vitest|jest|pytest|gates?)\b/i;
 
 /** Failure words. A sentence containing one is not a success claim unless the word is negated. */
 const FAILURE_RE = /\b(fail(?:s|ed|ing|ure|ures)?|broken|regress(?:ion|ions|ed)|crash(?:es|ed|ing)?|hangs?|not all|none of|no tests?|zero tests|error(?:s)? remain|still (?:erroring|red)|is red|are red)\b/gi;
@@ -66,10 +84,11 @@ const NEGATION_AFTER_RE = /\b(?:but not|not any ?more|no longer|before (?:my|the
 
 /** Scope words that qualify a claim: reported but never blocked. */
 const QUALIFIER_RE =
-  /\b(?:remaining|pre-?existing|except|excluding|unrelated|known (?:failures?|issues?|problems?|breakages?)|flaky|other than|apart from|aside from|besides|all other|the other|only (?:the|these|those|\d+)|partial(?:ly)?|mostly|most|almost|nearly|so far|for now|at least|the rest|subset|ignoring)\b/i;
+  /\b(?:remaining|pre-?existing|except|excluding|unrelated|known (?:[\w-]+ ){0,2}(?:failures?|issues?|problems?|breakages?|errors?|warnings?|prerender|limitations?)|only the known|flaky|other than|apart from|aside from|besides|all other|the other|only (?:the|these|those|\d+)|partial(?:ly)?|mostly|most|almost|nearly|so far|for now|at least|the rest|subset|ignoring|for (?:its|these|those|my|the new|the changed|the touched|the affected|the modified) files?|on its files)\b/i;
 
 /** The generic "everything is green" forms expand into a claim for each category. */
-const EVERYTHING_RE = /\b(?:everything|all checks|all the checks|all verification|all verifications|every check)(?: (?:is|are|now|still|also|else))* (?:pass(?:es|ed|ing)?|green|clean|succeed(?:s|ed)?)\b|\ball green\b|\bgreen across the board\b/i;
+const EVERYTHING_RE =
+  /(?<!\b(?:smoke|health|status|uptime|infra|infrastructure|prod|production|deploys?|endpoints?|routes?|pages?|links?|servers?|services?|processes|monitors?|queues?) )\b(?:everything|all checks|all the checks|all verification|all verifications|every check|gates)(?: (?:is|are|now|still|also|else))* (?:pass(?:es|ed|ing)?|green|clean|succeed(?:s|ed)?)\b|(?<!\b(?:smoke|health|status|uptime|infra|infrastructure|prod|production|deploys?|endpoints?|routes?|pages?|links?|servers?|services?|processes|monitors?|queues?|checks?) )\ball green\b|\bgreen across the board\b|\bpass(?:es|ed)? every check\b/i;
 
 interface Pattern {
   id: string;
@@ -87,7 +106,7 @@ const PATTERNS: Pattern[] = [
   {
     id: "all_tests_pass",
     category: "test",
-    re: new RegExp(`\\b(?:all|every)(?: \\d+| of the| the| existing| \\d+ of the| my| our| your| \\d+ of)?(?: [\\w-]+){0,2}? tests?(?: cases?)?(?: (?:in|of|for|from|under|inside|across) (?:the )?[\\w./-]+(?: [\\w-]+){0,2})?${AUX} (?:pass(?:es|ed|ing)?|green|succeed(?:ed|s)?)\\b`, "i"),
+    re: new RegExp(`\\b(?:all|every)(?: (?:${NUM})| of the| the| existing| (?:${NUM}) of the| my| our| your| (?:${NUM}) of)?(?: [\\w-]+){0,2}? tests?(?: cases?)?(?: (?:in|of|for|from|under|inside|across) (?:the )?[\\w./-]+(?: [\\w-]+){0,2})?${AUX} (?:pass(?:es|ed|ing)?|green|succeed(?:ed|s)?)\\b`, "i"),
     scope: "all",
   },
   {
@@ -105,7 +124,7 @@ const PATTERNS: Pattern[] = [
   {
     id: "tests_pass",
     category: "test",
-    re: new RegExp(`\\b(?:the |both |existing |new |unit |integration |e2e |remaining |updated |affected |relevant |related |added |smoke |\\d+ )*tests?(?: (?:suite|suites|cases?|files?))?:?${AUX} (?:pass(?:es|ed|ing)?|succeed(?:ed|s)?|green)\\b`, "i"),
+    re: new RegExp(`\\b(?:the |both |existing |new |unit |integration |remaining |updated |affected |relevant |related |added |(?:${NUM}) )*tests?(?: (?:suite|suites|cases?|files?))?:?${AUX} (?:pass(?:es|ed|ing)?|succeed(?:ed|s)?|green)\\b`, "i"),
     scope: (s) => (/\b(?:all|every|suite)\b/i.test(s) ? "all" : "some"),
   },
   {
@@ -123,9 +142,9 @@ const PATTERNS: Pattern[] = [
   {
     id: "n_passed",
     category: "test",
-    re: /\b([1-9]\d*)(?:\/(\d+))? (?:tests? |specs? |test cases? |checks? |examples? )?(?:passed|passing|pass|green)\b/i,
+    re: new RegExp(`\\b([1-9](?:\\d{0,2}(?:,\\d{3})+|\\d*))(?:\\/(${NUM}))? (?:tests? |specs? |test cases? |checks? |examples? )?(?:passed|passing|pass|green)\\b`, "i"),
     scope: (s) => {
-      const m = s.match(/^(\d+)\/(\d+)/);
+      const m = s.match(/^([\d,]+)\/([\d,]+)/);
       return m && m[1] === m[2] ? "all" : "some";
     },
   },
@@ -144,7 +163,7 @@ const PATTERNS: Pattern[] = [
   {
     id: "no_type_errors",
     category: "typecheck",
-    re: /\b(?:no|zero|0|without) (?:type|typescript|tsc|mypy|pyright|typing|type-?check(?:ing)?|compiler|type-level) errors?\b|\btype-?checks? (?:cleanly|clean|without errors|with no errors|with zero errors)\b|\b(?:tsc|mypy|pyright|typecheck|type-?check|the type checker|typescript) (?:reports?|shows?|finds?|returns?|gives?|has|had|comes back with) (?:no|zero|0) (?:errors?|issues?|problems?|complaints?)\b|\btypes (?:all )?check(?: out)?\b/i,
+    re: /\b(?:no|zero|0|without) (?:type|typescript|tsc|mypy|pyright|typing|type-?check(?:ing)?|compiler|type-level) errors?\b|\btype-?checks? (?:cleanly|clean|without errors|with no errors|with zero errors)\b|\b(?:tsc|mypy|pyright|typecheck|type-?check|the type checker|typescript) (?:reports?|shows?|finds?|returns?|gives?|has|had|comes back with|with|at)? ?(?:no|zero|0) (?:errors?|issues?|problems?|complaints?)\b|\btypes (?:all )?check(?: out)?\b/i,
     scope: "all",
   },
   {
@@ -156,7 +175,7 @@ const PATTERNS: Pattern[] = [
   {
     id: "no_lint_errors",
     category: "lint",
-    re: /\b(?:no|zero|0|without) (?:lint(?:ing|er)?|eslint|ruff|clippy|rubocop|biome|formatting|prettier|style|flake8|pylint) (?:errors?|warnings?|issues?|problems?|violations?|offenses?|complaints?|findings?)\b|\blint(?:ing)?(?: is)? clean\b|\b(?:eslint|ruff|clippy|biome|rubocop|the linter|linting|lint) (?:reports?|shows?|finds?|returns?|gives?|has|had|comes back with) (?:no|zero|0) (?:errors?|issues?|problems?|warnings?|complaints?|findings?)\b/i,
+    re: /\b(?:no|zero|0|without) (?:lint(?:ing|er)?|eslint|ruff|clippy|rubocop|biome|formatting|prettier|style|flake8|pylint) (?:errors?|warnings?|issues?|problems?|violations?|offenses?|complaints?|findings?)\b|\blint(?:ing)?(?: is)? clean\b|\b(?:eslint|ruff|clippy|biome|rubocop|the linter|linting|lint) (?:reports?|shows?|finds?|returns?|gives?|has|had|comes back with|with|at)? ?(?:no|zero|0) (?:errors?|issues?|problems?|warnings?|complaints?|findings?)\b/i,
     scope: "all",
   },
   {
@@ -168,7 +187,7 @@ const PATTERNS: Pattern[] = [
   {
     id: "project_builds",
     category: "build",
-    re: /\b(?:project|app|application|package|codebase|library|crate|module|binary|image|container|site|everything|it|code) (?:still |now |also |again )?builds\b/i,
+    re: /(?<!\b(?:while|as|when|once|until|before|after|if) )\b(?:project|app|application|package|codebase|library|crate|module|binary|image|container|site|everything|it|code) (?:still |now |also |again )?builds\b(?! (?:on|upon|from|with|off|toward|towards|atop|against|over|onto|around|the|a|an|your|our|its|their|this|that|these|those|each|every|all|out|up|in|into|to|itself|them|us|you|me|new|one|two|three|several|multiple|many|some|most|any|no)\b)/i,
     scope: "all",
   },
   {
@@ -197,6 +216,14 @@ function subjectCategory(word: string): Category | null {
 }
 
 const CATEGORY_NOUN: Record<Category, string> = { test: "tests", typecheck: "typecheck", lint: "lint", build: "build" };
+
+/** Tools an agent names in a claim, mapped to the runner names the catalog uses. */
+const TOOL_HINT_RE = /\b(tsc|vue-tsc|mypy|pyright|eslint|ruff|biome|clippy|rubocop|oxlint|prettier|flake8|pylint|pytest|vitest|jest|mocha|playwright|cypress|cargo|go test|go vet|next build|vite build|webpack|tsup|phpunit|rspec|phpstan|golangci-lint|svelte-check)\b/i;
+
+function toolHint(span: string): string | undefined {
+  const m = TOOL_HINT_RE.exec(span);
+  return m ? (m[1] as string).toLowerCase() : undefined;
+}
 
 /** Replaces code spans with a placeholder, or with the category noun when the span is a runner command. */
 function stripCode(text: string): string {
@@ -234,10 +261,10 @@ function failureIsNegated(sentence: string): boolean {
 }
 
 function numbersIn(span: string): Counts | undefined {
-  const m = span.match(/\b([1-9]\d*)(?:\/(\d+))?\b/);
+  const m = span.match(/\b([1-9][\d,]*)(?:\/([\d,]+))?\b/);
   if (!m) return undefined;
-  const counts: Counts = { passed: Number(m[1]) };
-  if (m[2]) counts.total = Number(m[2]);
+  const counts: Counts = { passed: Number((m[1] as string).replace(/,/g, "")) };
+  if (m[2]) counts.total = Number(m[2].replace(/,/g, ""));
   return counts;
 }
 
@@ -257,17 +284,19 @@ export function extractClaims(text: string): Claim[] {
       if (IMPERATIVE_RE.test(sentence)) continue;
       if (CONDITIONAL_RE.test(sentence)) continue;
       if (RELAYED_RE.test(sentence)) continue;
+      if (MENTION_RE.test(sentence)) continue;
       if (!failureIsNegated(sentence)) continue;
       if (NEGATION_AFTER_RE.test(sentence)) continue;
+      const operations = OPERATIONS_RE.test(sentence);
       const found = new Map<Category, Claim>();
       const put = (claim: Claim) => {
         const existing = found.get(claim.category);
         if (!existing || (existing.scope === "some" && claim.scope === "all")) found.set(claim.category, claim);
       };
       const everything = sentence.match(EVERYTHING_RE);
-      if (everything && !NEGATION_BEFORE_RE.test(sentence.slice(0, everything.index ?? 0))) {
+      if (everything && !NEGATION_BEFORE_RE.test(sentence.slice(0, everything.index ?? 0)) && VERIFICATION_NOUN_RE.test(paragraph) && !operations) {
         for (const category of ["test", "typecheck", "lint", "build"] as const) {
-          put({ category, text: everything[0], sentence, scope: "all", qualified: paragraphQualified });
+          put({ category, text: everything[0], sentence, scope: "some", qualified: paragraphQualified, expanded: true });
         }
       }
       const coordinated = COORDINATED_RE.exec(sentence);
@@ -287,11 +316,17 @@ export function extractClaims(text: string): Claim[] {
         const span = m[0];
         const before = sentence.slice(0, m.index);
         if (NEGATION_BEFORE_RE.test(before)) continue;
+        // "25/25 PASS" next to health checks or smoke probes is about a server, not a test suite.
+        if (p.category === "test" && operations && !/\b(?:tests?|specs?|test cases?)\b/i.test(span)) continue;
+        // A live, manual or smoke test that passed is not a suite run.
+        if (p.category === "test" && MANUAL_TEST_RE.test(`${before.trim().split(/\s+/).slice(-3).join(" ")} ${span}`.replace(/\s+/g, " "))) continue;
         const scope = typeof p.scope === "function" ? p.scope(span) : p.scope;
         const claim: Claim = { category: p.category, text: span, sentence, scope, qualified: paragraphQualified };
         const counts = p.category === "test" ? numbersIn(span) : undefined;
         if (counts) claim.counts = counts;
         if (p.alternates) claim.alternates = p.alternates;
+        const tool = toolHint(span);
+        if (tool) claim.tool = tool;
         put(claim);
       }
       for (const c of found.values()) claims.push(c);

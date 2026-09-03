@@ -116,9 +116,12 @@ describe("claim corpus", () => {
     expect(deduped.map((c) => `${c.category}:${c.scope}`).sort()).toEqual(["build:all", "test:all"]);
   });
 
-  it("expands 'everything passes' into one claim per category", () => {
-    const claims = extractClaims("Everything passes.");
+  it("expands 'everything passes' into one claim per category when the paragraph names checks", () => {
+    const claims = extractClaims("Everything passes: tests, tsc and lint.");
     expect(claims.map((c) => c.category).sort()).toEqual(["build", "lint", "test", "typecheck"]);
+    expect(claims.every((c) => c.expanded && c.scope === "some")).toBe(true);
+    expect(extractClaims("Everything passes.")).toEqual([]);
+    expect(extractClaims("Infra: all green, every pm2 process online.")).toEqual([]);
   });
 
   it("handles a realistic final message", () => {

@@ -1,382 +1,2188 @@
 [
-  {"text": "All 41 tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "All tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "All tests are passing now.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The full test suite passes.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The test suite is green.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Tests pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Tests are passing.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "41 passed, 0 failed.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "41/41 passing.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "9/9 tests passed.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The tests pass now.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Unit tests pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Both tests pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "The new tests pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "All existing tests still pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Everything passes.", "label": "assertive", "categories": ["test", "typecheck", "lint", "build"], "scope": "all"},
-  {"text": "The suite is now green.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "I ran the tests and they pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Ran the full suite: all 203 tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The implementation passes all tests.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The code passes the tests.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Tests green.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "All smoke tests green.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Integration tests pass against the local database.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "The e2e tests pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "203 tests passed in 4.2s.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "All 87 conformance tests pass after the fix.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The suite ran clean.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The tests all pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Every test passes.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The whole suite is green.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Tests pass locally.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "All tests pass, including the three new ones.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Result: 12 passed, 3 skipped.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Test suite: green (41 tests).", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "All 16 route tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Done. All tests pass and the build is clean.", "label": "assertive", "categories": ["test", "build"], "scope": "all"},
-  {"text": "All 5 test cases now pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "the tests are green", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Tests: 41 passed, 41 total.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "✓ tests pass", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Now all tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "After the fix, all tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "With this change, all tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The full suite is passing (203 tests).", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "All tests pass on both Node 20 and Node 22.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "I re-ran the suite and everything passes.", "label": "assertive", "categories": ["test", "typecheck", "lint", "build"], "scope": "all"},
-  {"text": "`npm test` passes.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "`pytest` is green.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "`cargo test` passes with 17 tests.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "The updated tests pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "The affected tests pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Both the unit and integration tests pass.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "All 12 tests in the holds module pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Fixed the race condition; all tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Verified: all tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "Confirmed that all tests pass.", "label": "assertive", "categories": ["test"], "scope": "all"},
-  {"text": "The tests came back green.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Test run finished without failures.", "label": "assertive", "categories": ["test"], "scope": "some"},
-  {"text": "Suite passes.", "label": "assertive", "categories": ["test"], "scope": "all"},
-
-  {"text": "tsc is clean.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "Typecheck passes.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "Type check passes.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "No type errors.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "Zero type errors.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "mypy passes.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "mypy is clean.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "pyright reports 0 errors.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "The types check out.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "tsc --noEmit passes.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "TypeScript compiles cleanly.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "Typechecking is clean.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "tsc passes with no errors.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "vue-tsc is clean.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "Types are clean.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "The typecheck is green.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "No TypeScript errors.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "tsc: clean.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "Typecheck clean, lint clean.", "label": "assertive", "categories": ["typecheck", "lint"]},
-  {"text": "mypy reports no issues.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "`tsc --noEmit` is clean.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "`npx tsc -p tsconfig.json` passes.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "Type checking passes across all packages.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "The type checker is happy.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "tsc exits clean.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "Typecheck is still green after the refactor.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "cargo check passes.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "pyright is clean on the whole package.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "There are no type errors.", "label": "assertive", "categories": ["typecheck"]},
-  {"text": "typecheck: passing", "label": "assertive", "categories": ["typecheck"]},
-
-  {"text": "Lint passes.", "label": "assertive", "categories": ["lint"]},
-  {"text": "ESLint is clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Lint is clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "No lint errors.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Zero lint errors.", "label": "assertive", "categories": ["lint"]},
-  {"text": "ruff passes.", "label": "assertive", "categories": ["lint"]},
-  {"text": "ruff check is clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Clippy is clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "No ESLint errors or warnings.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Linting passes.", "label": "assertive", "categories": ["lint"]},
-  {"text": "eslint reports no problems.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Prettier check passes.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Formatting is clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "rubocop passes.", "label": "assertive", "categories": ["lint"]},
-  {"text": "golangci-lint is happy.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Lint: clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "The linter is happy.", "label": "assertive", "categories": ["lint"]},
-  {"text": "0 lint errors.", "label": "assertive", "categories": ["lint"]},
-  {"text": "biome check passes.", "label": "assertive", "categories": ["lint"]},
-  {"text": "flake8 is clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "`npm run lint` passes.", "label": "assertive", "categories": ["lint"]},
-  {"text": "`ruff check .` is clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Lint and typecheck both pass.", "label": "assertive", "categories": ["lint", "typecheck"]},
-  {"text": "ESLint passes with zero warnings.", "label": "assertive", "categories": ["lint"]},
-  {"text": "The lint run is clean.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Linting is green.", "label": "assertive", "categories": ["lint"]},
-  {"text": "Clippy reports no warnings.", "label": "assertive", "categories": ["lint"]},
-  {"text": "No linting issues.", "label": "assertive", "categories": ["lint"]},
-  {"text": "lint: ok", "label": "assertive", "categories": ["lint"]},
-  {"text": "Style checks pass.", "label": "none"},
-
-  {"text": "The build passes.", "label": "assertive", "categories": ["build"]},
-  {"text": "Build is green.", "label": "assertive", "categories": ["build"]},
-  {"text": "The build succeeds.", "label": "assertive", "categories": ["build"]},
-  {"text": "Build clean.", "label": "assertive", "categories": ["build"]},
-  {"text": "Builds cleanly.", "label": "assertive", "categories": ["build"]},
-  {"text": "The app builds.", "label": "assertive", "categories": ["build"]},
-  {"text": "next build succeeds.", "label": "assertive", "categories": ["build"]},
-  {"text": "Compiled successfully.", "label": "assertive", "categories": ["build"]},
-  {"text": "The project compiles cleanly.", "label": "assertive", "categories": ["build"]},
-  {"text": "Build completed successfully.", "label": "assertive", "categories": ["build"]},
-  {"text": "Production build is clean.", "label": "assertive", "categories": ["build"]},
-  {"text": "The build works.", "label": "assertive", "categories": ["build"]},
-  {"text": "cargo build succeeds.", "label": "assertive", "categories": ["build"]},
-  {"text": "The build finished successfully.", "label": "assertive", "categories": ["build"]},
-  {"text": "No build errors.", "label": "assertive", "categories": ["build"]},
-  {"text": "Build green, tests green.", "label": "assertive", "categories": ["build", "test"]},
-  {"text": "Successful build.", "label": "assertive", "categories": ["build"]},
-  {"text": "The package builds without errors.", "label": "assertive", "categories": ["build"]},
-  {"text": "Docker build succeeds.", "label": "assertive", "categories": ["build"]},
-  {"text": "Build passes on Node 20 and 22.", "label": "assertive", "categories": ["build"]},
-  {"text": "`npm run build` succeeds.", "label": "assertive", "categories": ["build"]},
-  {"text": "`next build` is clean.", "label": "assertive", "categories": ["build"]},
-  {"text": "The Docker image builds.", "label": "assertive", "categories": ["build"]},
-  {"text": "build: ok", "label": "assertive", "categories": ["build"]},
-  {"text": "Everything compiles.", "label": "none"},
-  {"text": "The crate builds again.", "label": "assertive", "categories": ["build"]},
-  {"text": "Compilation succeeds.", "label": "assertive", "categories": ["build"]},
-  {"text": "It builds.", "label": "assertive", "categories": ["build"]},
-  {"text": "The site builds cleanly with no warnings.", "label": "assertive", "categories": ["build"]},
-  {"text": "Build and tests are both green.", "label": "assertive", "categories": ["build", "test"]},
-
-  {"text": "The tests should pass now.", "label": "hedged"},
-  {"text": "Tests should be green after this change.", "label": "hedged"},
-  {"text": "I expect all tests to pass.", "label": "hedged"},
-  {"text": "This should fix the build.", "label": "hedged"},
-  {"text": "I believe the tests pass.", "label": "hedged"},
-  {"text": "The tests probably pass.", "label": "hedged"},
-  {"text": "Tests likely pass but I could not run them.", "label": "hedged"},
-  {"text": "The build should be green.", "label": "hedged"},
-  {"text": "Assuming the tests pass, this is ready.", "label": "hedged"},
-  {"text": "The tests may pass now.", "label": "hedged"},
-  {"text": "It looks like the build passes.", "label": "hedged"},
-  {"text": "Tests seem to pass.", "label": "hedged"},
-  {"text": "I haven't run the tests yet.", "label": "hedged"},
-  {"text": "I didn't run the tests.", "label": "hedged"},
-  {"text": "I couldn't run the tests because Docker is not available.", "label": "hedged"},
-  {"text": "Tests were not run.", "label": "hedged"},
-  {"text": "Not sure if the tests pass.", "label": "hedged"},
-  {"text": "I want to make sure all tests pass before merging.", "label": "hedged"},
-  {"text": "The goal is for all tests to pass.", "label": "hedged"},
-  {"text": "We need the build to pass before release.", "label": "hedged"},
-  {"text": "Tests must pass before merge.", "label": "hedged"},
-  {"text": "Make sure the build passes.", "label": "hedged"},
-  {"text": "Ensure tests pass.", "label": "hedged"},
-  {"text": "Let's see if the tests pass.", "label": "hedged"},
-  {"text": "Trying to get the tests to pass.", "label": "hedged"},
-  {"text": "Still working on getting the build green.", "label": "hedged"},
-  {"text": "The tests would pass if the fixture existed.", "label": "hedged"},
-  {"text": "In theory the build passes.", "label": "hedged"},
-  {"text": "Hopefully all tests pass now.", "label": "hedged"},
-  {"text": "The tests appear to pass.", "label": "hedged"},
-  {"text": "I think tsc is clean.", "label": "hedged"},
-  {"text": "Lint is presumably clean.", "label": "hedged"},
-  {"text": "This is supposed to make the build pass.", "label": "hedged"},
-  {"text": "I am not certain the tests pass.", "label": "hedged"},
-  {"text": "I could not verify that the tests pass.", "label": "hedged"},
-  {"text": "Unclear whether the build passes.", "label": "hedged"},
-  {"text": "I will double-check that all tests pass.", "label": "hedged"},
-  {"text": "Sanity check pending: tests pass?", "label": "hedged"},
-  {"text": "It should compile cleanly now.", "label": "hedged"},
-  {"text": "Tests are expected to pass.", "label": "hedged"},
-
-  {"text": "The build will pass once the dependency is updated.", "label": "future"},
-  {"text": "Tests will pass after you run npm install.", "label": "future"},
-  {"text": "Let me run the tests to confirm they pass.", "label": "future"},
-  {"text": "I'll run the tests now.", "label": "future"},
-  {"text": "Running the tests to make sure they pass.", "label": "future"},
-  {"text": "Going to verify the build passes.", "label": "future"},
-  {"text": "I need to check that tests pass.", "label": "future"},
-  {"text": "Once tests pass, I'll commit.", "label": "future"},
-  {"text": "If the tests pass, we're done.", "label": "future"},
-  {"text": "Next step: run the tests.", "label": "future"},
-  {"text": "TODO: make the tests pass.", "label": "future"},
-  {"text": "- [ ] Tests pass", "label": "future"},
-  {"text": "- [ ] Build is green", "label": "future"},
-  {"text": "Please run the tests to confirm.", "label": "future"},
-  {"text": "Run npm test to verify.", "label": "future"},
-  {"text": "Run the suite and it passes.", "label": "future"},
-  {"text": "Then re-run the tests and they pass.", "label": "future"},
-  {"text": "I'll make sure the build passes.", "label": "future"},
-  {"text": "Now I'm going to run the tests.", "label": "future"},
-  {"text": "Let me verify the build passes.", "label": "future"},
-  {"text": "Plan: fix the import, then confirm all tests pass.", "label": "future"},
-  {"text": "Waiting for the tests to pass.", "label": "future"},
-  {"text": "Until the tests pass, this stays a draft.", "label": "future"},
-  {"text": "After you merge, the build passes.", "label": "future"},
-  {"text": "Step 3: verify tsc is clean.", "label": "future"},
-  {"text": "Acceptance criteria: all tests pass.", "label": "future"},
-  {"text": "Definition of done: build passes and lint is clean.", "label": "future"},
-  {"text": "I still need to run the tests.", "label": "future"},
-  {"text": "I'm about to run the tests.", "label": "hedged"},
-  {"text": "Rerunning tests now.", "label": "future"},
-
-  {"text": "Tests fail.", "label": "negated"},
-  {"text": "2 tests fail.", "label": "negated"},
-  {"text": "The build is broken.", "label": "negated"},
-  {"text": "tsc reports 3 errors.", "label": "negated"},
-  {"text": "The tests are failing.", "label": "negated"},
-  {"text": "One test is still failing.", "label": "negated"},
-  {"text": "Tests pass except for two failures.", "label": "negated"},
-  {"text": "All tests pass except test_expiry which fails.", "label": "negated"},
-  {"text": "Not all tests pass.", "label": "negated"},
-  {"text": "Tests don't pass yet.", "label": "negated"},
-  {"text": "The tests no longer pass.", "label": "negated"},
-  {"text": "Tests didn't pass.", "label": "negated"},
-  {"text": "The build doesn't pass.", "label": "negated"},
-  {"text": "tsc is not clean.", "label": "negated"},
-  {"text": "Lint is not clean.", "label": "negated"},
-  {"text": "The build never passed.", "label": "negated"},
-  {"text": "Previously all tests passed.", "label": "negated"},
-  {"text": "Tests used to pass.", "label": "negated"},
-  {"text": "Originally the build passed.", "label": "negated"},
-  {"text": "The tests passed before my change.", "label": "negated"},
-  {"text": "Tests pass but the build fails.", "label": "negated"},
-  {"text": "Zero tests pass.", "label": "negated"},
-  {"text": "No tests were run.", "label": "negated"},
-  {"text": "The tests pass on main but not on this branch.", "label": "negated"},
-  {"text": "40 passed, 1 failed.", "label": "negated"},
-  {"text": "Tests: 1 failed, 40 passed, 41 total.", "label": "negated"},
-  {"text": "The build fails with a type error.", "label": "negated"},
-  {"text": "Typecheck fails on two files.", "label": "negated"},
-  {"text": "Lint fails.", "label": "negated"},
-  {"text": "The suite crashes on startup.", "label": "negated"},
-  {"text": "There is a regression in the tests.", "label": "negated"},
-  {"text": "Build is red.", "label": "negated"},
-  {"text": "Some tests fail intermittently.", "label": "negated"},
-  {"text": "The tests are not green.", "label": "negated"},
-  {"text": "None of the tests pass.", "label": "negated"},
-  {"text": "tsc passes but eslint fails.", "label": "negated"},
-  {"text": "Instead of passing, the tests hang.", "label": "negated"},
-  {"text": "The tests stopped passing after the upgrade.", "label": "negated"},
-  {"text": "Errors remain in the build.", "label": "negated"},
-  {"text": "The build passed earlier today but is broken now.", "label": "negated"},
-
-  {"text": "I removed the sentence \"all tests pass\" from the README.", "label": "quoted"},
-  {"text": "The old summary said \"tests pass\" but that was wrong.", "label": "quoted"},
-  {"text": "Changed the log message to \"build succeeded\".", "label": "quoted"},
-  {"text": "The status line reads 'tsc clean'.", "label": "quoted"},
-  {"text": "Renamed the test from `all tests pass` to `tests pass`.", "label": "quoted"},
-  {"text": "The badge text is \"build passing\".", "label": "quoted"},
-  {"text": "Replaced \"lint clean\" with \"lint passes\" in the docs.", "label": "quoted"},
-  {"text": "The assertion message says \"all tests pass\".", "label": "quoted"},
-  {"text": "I added a comment: \"tests pass as of v2\".", "label": "quoted"},
-  {"text": "The commit is titled \"make the build pass\".", "label": "quoted"},
-  {"text": "Search for the string \"tests pass\" returned no results.", "label": "quoted"},
-  {"text": "The CHANGELOG line reads \"typecheck passes on 5.6\".", "label": "quoted"},
-
-  {"text": "You said the tests pass, but I see two failures.", "label": "relayed"},
-  {"text": "According to the README, all tests pass.", "label": "relayed"},
-  {"text": "The issue description says the build passes on CI.", "label": "relayed"},
-  {"text": "You mentioned tsc is clean.", "label": "relayed"},
-  {"text": "The PR description claims all tests pass.", "label": "relayed"},
-  {"text": "Per the ticket, lint passes.", "label": "relayed"},
-  {"text": "The previous session reported that all tests pass.", "label": "relayed"},
-  {"text": "CI is green.", "label": "relayed"},
-  {"text": "Tests pass in CI.", "label": "relayed"},
-  {"text": "The docs say the build is clean.", "label": "relayed"},
-  {"text": "The pipeline is green on main.", "label": "relayed"},
-  {"text": "GitHub Actions is green for this commit.", "label": "relayed"},
-  {"text": "As the readme notes, the tests pass on Linux only.", "label": "relayed"},
-  {"text": "The commit message says all tests pass.", "label": "relayed"},
-  {"text": "You told me the build passes on your machine.", "label": "relayed"},
-  {"text": "The earlier summary states that lint is clean.", "label": "relayed"},
-  {"text": "According to the changelog, tsc is clean since 1.2.", "label": "relayed"},
-  {"text": "The comment on the PR says tests pass.", "label": "relayed"},
-
-  {"text": "The remaining tests pass.", "label": "scoped", "categories": ["test"]},
-  {"text": "Apart from the flaky snapshot test, all tests pass.", "label": "scoped", "categories": ["test"]},
-  {"text": "All other tests pass.", "label": "scoped", "categories": ["test"]},
-  {"text": "Only the unit tests pass.", "label": "scoped", "categories": ["test"]},
-  {"text": "Tests pass, apart from the known issue with test_legacy.", "label": "scoped", "categories": ["test"]},
-  {"text": "Everything except the e2e suite is green.", "label": "scoped"},
-  {"text": "All tests pass except for two pre-existing snapshot mismatches.", "label": "scoped", "categories": ["test"]},
-  {"text": "The tests pass on my machine, except the ones needing Docker.", "label": "scoped", "categories": ["test"]},
-  {"text": "Aside from the skipped tests, everything passes.", "label": "scoped"},
-  {"text": "Lint is clean except for warnings in generated code.", "label": "scoped", "categories": ["lint"]},
-  {"text": "The build is clean apart from deprecation warnings.", "label": "scoped", "categories": ["build"]},
-  {"text": "Most tests pass.", "label": "scoped", "categories": ["test"]},
-  {"text": "Tests pass so far.", "label": "scoped", "categories": ["test"]},
-  {"text": "The rest of the tests pass.", "label": "scoped", "categories": ["test"]},
-  {"text": "Excluding the pre-existing flaky test, the suite is green.", "label": "scoped", "categories": ["test"]},
-  {"text": "Nearly all tests pass.", "label": "scoped", "categories": ["test"]},
-  {"text": "Unrelated pre-existing issues aside, tsc is clean.", "label": "scoped", "categories": ["typecheck"]},
-  {"text": "All tests pass, ignoring the known slow test.", "label": "scoped", "categories": ["test"]},
-  {"text": "The subset I ran passes.", "label": "none"},
-  {"text": "Partial run: the holds tests pass.", "label": "scoped", "categories": ["test"]},
-
-  {"text": "Do all tests pass?", "label": "question"},
-  {"text": "Does the build pass now?", "label": "question"},
-  {"text": "Is tsc clean?", "label": "question"},
-  {"text": "Should I run the tests?", "label": "question"},
-  {"text": "Are the tests green on your side?", "label": "question"},
-  {"text": "Did the tests pass?", "label": "question"},
-  {"text": "Is lint clean after this?", "label": "question"},
-  {"text": "Would you like me to confirm all tests pass?", "label": "question"},
-  {"text": "Can you check whether the build passes?", "label": "question"},
-  {"text": "Which tests pass?", "label": "question"},
-
-  {"text": "```\nall tests pass\n```", "label": "code"},
-  {"text": "```sh\nnpm test\n# all 41 tests pass\n```", "label": "code"},
-  {"text": "`all tests pass`", "label": "code"},
-  {"text": "```\nTests: 41 passed, 41 total\n```", "label": "code"},
-  {"text": "See `docs/testing.md` for how the build passes.", "label": "future"},
-  {"text": "```ts\nexpect(build).toBe('green');\n```", "label": "code"},
-  {"text": "~~~\nBuild succeeded.\n~~~", "label": "code"},
-  {"text": "```json\n{\"status\": \"tests pass\"}\n```", "label": "code"},
-
-  {"text": "Tests directory reorganized.", "label": "none"},
-  {"text": "Added a test for the pass-through logic.", "label": "none"},
-  {"text": "Passing the config object to the runner.", "label": "none"},
-  {"text": "Bypass the cache.", "label": "none"},
-  {"text": "The tests are located in test/.", "label": "none"},
-  {"text": "I passed the flag through.", "label": "none"},
-  {"text": "Green is the default theme colour.", "label": "none"},
-  {"text": "The test ID is passed to the handler.", "label": "none"},
-  {"text": "This function passes tests to the runner.", "label": "none"},
-  {"text": "Made the CI badge green.", "label": "none"},
-  {"text": "Did a first pass over the tests.", "label": "none"},
-  {"text": "Tests: 5 files.", "label": "none"},
-  {"text": "The button turns green on success.", "label": "none"},
-  {"text": "Added three tests.", "label": "none"},
-  {"text": "Wrote a build script.", "label": "none"},
-  {"text": "Refactored the linter config.", "label": "none"},
-  {"text": "Type errors are shown inline.", "label": "none"},
-  {"text": "The build takes about two minutes.", "label": "none"},
-  {"text": "The test harness passes the port as an argument.", "label": "none"},
-  {"text": "Renamed passTests to runTests.", "label": "none"},
-  {"text": "Updated the README.", "label": "none"},
-  {"text": "Committed the changes.", "label": "none"},
-  {"text": "The green theme is now the default.", "label": "none"},
-  {"text": "We compile the templates at build time.", "label": "none"},
-  {"text": "Tests run in about four seconds.", "label": "none"},
-  {"text": "The build output goes to dist/.", "label": "none"},
-  {"text": "Type checking runs in CI on every push.", "label": "none"},
-  {"text": "Lint rules live in eslint.config.js.", "label": "none"},
-  {"text": "I added a passing test and a failing one to demonstrate the reporter.", "label": "negated"},
-  {"text": "The pass rate improved.", "label": "none"},
-  {"text": "This will make the tests faster.", "label": "none"},
-  {"text": "Coverage is at 91 percent.", "label": "none"},
-  {"text": "The test database is seeded on startup.", "label": "none"},
-  {"text": "Passed the token via header.", "label": "none"},
-  {"text": "Users pass a callback to subscribe.", "label": "none"},
-  {"text": "The lint step was moved before the build step.", "label": "none"},
-  {"text": "Build artifacts are cached.", "label": "none"},
-  {"text": "Green means the hold is active.", "label": "none"},
-  {"text": "I ran the tests.", "label": "none"},
-  {"text": "I ran npm run build.", "label": "none"}
+  {
+    "text": "All 41 tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "All tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "All tests are passing now.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The full test suite passes.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The test suite is green.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Tests are passing.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "41 passed, 0 failed.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "41/41 passing.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "9/9 tests passed.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The tests pass now.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Unit tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Both tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "The new tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "All existing tests still pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Everything passes.",
+    "label": "none"
+  },
+  {
+    "text": "The suite is now green.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "I ran the tests and they pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Ran the full suite: all 203 tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The implementation passes all tests.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The code passes the tests.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Tests green.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "All smoke tests green.",
+    "label": "none"
+  },
+  {
+    "text": "Integration tests pass against the local database.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "The e2e tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "203 tests passed in 4.2s.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "All 87 conformance tests pass after the fix.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The suite ran clean.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The tests all pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Every test passes.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The whole suite is green.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Tests pass locally.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "All tests pass, including the three new ones.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Result: 12 passed, 3 skipped.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Test suite: green (41 tests).",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "All 16 route tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Done. All tests pass and the build is clean.",
+    "label": "assertive",
+    "categories": [
+      "test",
+      "build"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "All 5 test cases now pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "the tests are green",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Tests: 41 passed, 41 total.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "✓ tests pass",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Now all tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "After the fix, all tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "With this change, all tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The full suite is passing (203 tests).",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "All tests pass on both Node 20 and Node 22.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "I re-ran the suite and everything passes.",
+    "label": "assertive",
+    "categories": [
+      "test",
+      "typecheck",
+      "lint",
+      "build"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "`npm test` passes.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "`pytest` is green.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "`cargo test` passes with 17 tests.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "The updated tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "The affected tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Both the unit and integration tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "All 12 tests in the holds module pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Fixed the race condition; all tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Verified: all tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "Confirmed that all tests pass.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "The tests came back green.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Test run finished without failures.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Suite passes.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "all"
+  },
+  {
+    "text": "tsc is clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Typecheck passes.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Type check passes.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "No type errors.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Zero type errors.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "mypy passes.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "mypy is clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "pyright reports 0 errors.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "The types check out.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "tsc --noEmit passes.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "TypeScript compiles cleanly.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Typechecking is clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "tsc passes with no errors.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "vue-tsc is clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Types are clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "The typecheck is green.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "No TypeScript errors.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "tsc: clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Typecheck clean, lint clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck",
+      "lint"
+    ]
+  },
+  {
+    "text": "mypy reports no issues.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "`tsc --noEmit` is clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "`npx tsc -p tsconfig.json` passes.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Type checking passes across all packages.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "The type checker is happy.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "tsc exits clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Typecheck is still green after the refactor.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "cargo check passes.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "pyright is clean on the whole package.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "There are no type errors.",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "typecheck: passing",
+    "label": "assertive",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "Lint passes.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "ESLint is clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Lint is clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "No lint errors.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Zero lint errors.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "ruff passes.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "ruff check is clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Clippy is clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "No ESLint errors or warnings.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Linting passes.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "eslint reports no problems.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Prettier check passes.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Formatting is clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "rubocop passes.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "golangci-lint is happy.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Lint: clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "The linter is happy.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "0 lint errors.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "biome check passes.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "flake8 is clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "`npm run lint` passes.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "`ruff check .` is clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Lint and typecheck both pass.",
+    "label": "assertive",
+    "categories": [
+      "lint",
+      "typecheck"
+    ]
+  },
+  {
+    "text": "ESLint passes with zero warnings.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "The lint run is clean.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Linting is green.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Clippy reports no warnings.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "No linting issues.",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "lint: ok",
+    "label": "assertive",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "Style checks pass.",
+    "label": "none"
+  },
+  {
+    "text": "The build passes.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Build is green.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "The build succeeds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Build clean.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Builds cleanly.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "The app builds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "next build succeeds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Compiled successfully.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "The project compiles cleanly.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Build completed successfully.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Production build is clean.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "The build works.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "cargo build succeeds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "The build finished successfully.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "No build errors.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Build green, tests green.",
+    "label": "assertive",
+    "categories": [
+      "build",
+      "test"
+    ]
+  },
+  {
+    "text": "Successful build.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "The package builds without errors.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Docker build succeeds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Build passes on Node 20 and 22.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "`npm run build` succeeds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "`next build` is clean.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "The Docker image builds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "build: ok",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Everything compiles.",
+    "label": "none"
+  },
+  {
+    "text": "The crate builds again.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Compilation succeeds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "It builds.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "The site builds cleanly with no warnings.",
+    "label": "assertive",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Build and tests are both green.",
+    "label": "assertive",
+    "categories": [
+      "build",
+      "test"
+    ]
+  },
+  {
+    "text": "The tests should pass now.",
+    "label": "hedged"
+  },
+  {
+    "text": "Tests should be green after this change.",
+    "label": "hedged"
+  },
+  {
+    "text": "I expect all tests to pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "This should fix the build.",
+    "label": "hedged"
+  },
+  {
+    "text": "I believe the tests pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "The tests probably pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "Tests likely pass but I could not run them.",
+    "label": "hedged"
+  },
+  {
+    "text": "The build should be green.",
+    "label": "hedged"
+  },
+  {
+    "text": "Assuming the tests pass, this is ready.",
+    "label": "hedged"
+  },
+  {
+    "text": "The tests may pass now.",
+    "label": "hedged"
+  },
+  {
+    "text": "It looks like the build passes.",
+    "label": "hedged"
+  },
+  {
+    "text": "Tests seem to pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "I haven't run the tests yet.",
+    "label": "hedged"
+  },
+  {
+    "text": "I didn't run the tests.",
+    "label": "hedged"
+  },
+  {
+    "text": "I couldn't run the tests because Docker is not available.",
+    "label": "hedged"
+  },
+  {
+    "text": "Tests were not run.",
+    "label": "hedged"
+  },
+  {
+    "text": "Not sure if the tests pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "I want to make sure all tests pass before merging.",
+    "label": "hedged"
+  },
+  {
+    "text": "The goal is for all tests to pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "We need the build to pass before release.",
+    "label": "hedged"
+  },
+  {
+    "text": "Tests must pass before merge.",
+    "label": "hedged"
+  },
+  {
+    "text": "Make sure the build passes.",
+    "label": "hedged"
+  },
+  {
+    "text": "Ensure tests pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "Let's see if the tests pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "Trying to get the tests to pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "Still working on getting the build green.",
+    "label": "hedged"
+  },
+  {
+    "text": "The tests would pass if the fixture existed.",
+    "label": "hedged"
+  },
+  {
+    "text": "In theory the build passes.",
+    "label": "hedged"
+  },
+  {
+    "text": "Hopefully all tests pass now.",
+    "label": "hedged"
+  },
+  {
+    "text": "The tests appear to pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "I think tsc is clean.",
+    "label": "hedged"
+  },
+  {
+    "text": "Lint is presumably clean.",
+    "label": "hedged"
+  },
+  {
+    "text": "This is supposed to make the build pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "I am not certain the tests pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "I could not verify that the tests pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "Unclear whether the build passes.",
+    "label": "hedged"
+  },
+  {
+    "text": "I will double-check that all tests pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "Sanity check pending: tests pass?",
+    "label": "hedged"
+  },
+  {
+    "text": "It should compile cleanly now.",
+    "label": "hedged"
+  },
+  {
+    "text": "Tests are expected to pass.",
+    "label": "hedged"
+  },
+  {
+    "text": "The build will pass once the dependency is updated.",
+    "label": "future"
+  },
+  {
+    "text": "Tests will pass after you run npm install.",
+    "label": "future"
+  },
+  {
+    "text": "Let me run the tests to confirm they pass.",
+    "label": "future"
+  },
+  {
+    "text": "I'll run the tests now.",
+    "label": "future"
+  },
+  {
+    "text": "Running the tests to make sure they pass.",
+    "label": "future"
+  },
+  {
+    "text": "Going to verify the build passes.",
+    "label": "future"
+  },
+  {
+    "text": "I need to check that tests pass.",
+    "label": "future"
+  },
+  {
+    "text": "Once tests pass, I'll commit.",
+    "label": "future"
+  },
+  {
+    "text": "If the tests pass, we're done.",
+    "label": "future"
+  },
+  {
+    "text": "Next step: run the tests.",
+    "label": "future"
+  },
+  {
+    "text": "TODO: make the tests pass.",
+    "label": "future"
+  },
+  {
+    "text": "- [ ] Tests pass",
+    "label": "future"
+  },
+  {
+    "text": "- [ ] Build is green",
+    "label": "future"
+  },
+  {
+    "text": "Please run the tests to confirm.",
+    "label": "future"
+  },
+  {
+    "text": "Run npm test to verify.",
+    "label": "future"
+  },
+  {
+    "text": "Run the suite and it passes.",
+    "label": "future"
+  },
+  {
+    "text": "Then re-run the tests and they pass.",
+    "label": "future"
+  },
+  {
+    "text": "I'll make sure the build passes.",
+    "label": "future"
+  },
+  {
+    "text": "Now I'm going to run the tests.",
+    "label": "future"
+  },
+  {
+    "text": "Let me verify the build passes.",
+    "label": "future"
+  },
+  {
+    "text": "Plan: fix the import, then confirm all tests pass.",
+    "label": "future"
+  },
+  {
+    "text": "Waiting for the tests to pass.",
+    "label": "future"
+  },
+  {
+    "text": "Until the tests pass, this stays a draft.",
+    "label": "future"
+  },
+  {
+    "text": "After you merge, the build passes.",
+    "label": "future"
+  },
+  {
+    "text": "Step 3: verify tsc is clean.",
+    "label": "future"
+  },
+  {
+    "text": "Acceptance criteria: all tests pass.",
+    "label": "future"
+  },
+  {
+    "text": "Definition of done: build passes and lint is clean.",
+    "label": "future"
+  },
+  {
+    "text": "I still need to run the tests.",
+    "label": "future"
+  },
+  {
+    "text": "I'm about to run the tests.",
+    "label": "hedged"
+  },
+  {
+    "text": "Rerunning tests now.",
+    "label": "future"
+  },
+  {
+    "text": "Tests fail.",
+    "label": "negated"
+  },
+  {
+    "text": "2 tests fail.",
+    "label": "negated"
+  },
+  {
+    "text": "The build is broken.",
+    "label": "negated"
+  },
+  {
+    "text": "tsc reports 3 errors.",
+    "label": "negated"
+  },
+  {
+    "text": "The tests are failing.",
+    "label": "negated"
+  },
+  {
+    "text": "One test is still failing.",
+    "label": "negated"
+  },
+  {
+    "text": "Tests pass except for two failures.",
+    "label": "negated"
+  },
+  {
+    "text": "All tests pass except test_expiry which fails.",
+    "label": "negated"
+  },
+  {
+    "text": "Not all tests pass.",
+    "label": "negated"
+  },
+  {
+    "text": "Tests don't pass yet.",
+    "label": "negated"
+  },
+  {
+    "text": "The tests no longer pass.",
+    "label": "negated"
+  },
+  {
+    "text": "Tests didn't pass.",
+    "label": "negated"
+  },
+  {
+    "text": "The build doesn't pass.",
+    "label": "negated"
+  },
+  {
+    "text": "tsc is not clean.",
+    "label": "negated"
+  },
+  {
+    "text": "Lint is not clean.",
+    "label": "negated"
+  },
+  {
+    "text": "The build never passed.",
+    "label": "negated"
+  },
+  {
+    "text": "Previously all tests passed.",
+    "label": "negated"
+  },
+  {
+    "text": "Tests used to pass.",
+    "label": "negated"
+  },
+  {
+    "text": "Originally the build passed.",
+    "label": "negated"
+  },
+  {
+    "text": "The tests passed before my change.",
+    "label": "negated"
+  },
+  {
+    "text": "Tests pass but the build fails.",
+    "label": "negated"
+  },
+  {
+    "text": "Zero tests pass.",
+    "label": "negated"
+  },
+  {
+    "text": "No tests were run.",
+    "label": "negated"
+  },
+  {
+    "text": "The tests pass on main but not on this branch.",
+    "label": "negated"
+  },
+  {
+    "text": "40 passed, 1 failed.",
+    "label": "negated"
+  },
+  {
+    "text": "Tests: 1 failed, 40 passed, 41 total.",
+    "label": "negated"
+  },
+  {
+    "text": "The build fails with a type error.",
+    "label": "negated"
+  },
+  {
+    "text": "Typecheck fails on two files.",
+    "label": "negated"
+  },
+  {
+    "text": "Lint fails.",
+    "label": "negated"
+  },
+  {
+    "text": "The suite crashes on startup.",
+    "label": "negated"
+  },
+  {
+    "text": "There is a regression in the tests.",
+    "label": "negated"
+  },
+  {
+    "text": "Build is red.",
+    "label": "negated"
+  },
+  {
+    "text": "Some tests fail intermittently.",
+    "label": "negated"
+  },
+  {
+    "text": "The tests are not green.",
+    "label": "negated"
+  },
+  {
+    "text": "None of the tests pass.",
+    "label": "negated"
+  },
+  {
+    "text": "tsc passes but eslint fails.",
+    "label": "negated"
+  },
+  {
+    "text": "Instead of passing, the tests hang.",
+    "label": "negated"
+  },
+  {
+    "text": "The tests stopped passing after the upgrade.",
+    "label": "negated"
+  },
+  {
+    "text": "Errors remain in the build.",
+    "label": "negated"
+  },
+  {
+    "text": "The build passed earlier today but is broken now.",
+    "label": "negated"
+  },
+  {
+    "text": "I removed the sentence \"all tests pass\" from the README.",
+    "label": "quoted"
+  },
+  {
+    "text": "The old summary said \"tests pass\" but that was wrong.",
+    "label": "quoted"
+  },
+  {
+    "text": "Changed the log message to \"build succeeded\".",
+    "label": "quoted"
+  },
+  {
+    "text": "The status line reads 'tsc clean'.",
+    "label": "quoted"
+  },
+  {
+    "text": "Renamed the test from `all tests pass` to `tests pass`.",
+    "label": "quoted"
+  },
+  {
+    "text": "The badge text is \"build passing\".",
+    "label": "quoted"
+  },
+  {
+    "text": "Replaced \"lint clean\" with \"lint passes\" in the docs.",
+    "label": "quoted"
+  },
+  {
+    "text": "The assertion message says \"all tests pass\".",
+    "label": "quoted"
+  },
+  {
+    "text": "I added a comment: \"tests pass as of v2\".",
+    "label": "quoted"
+  },
+  {
+    "text": "The commit is titled \"make the build pass\".",
+    "label": "quoted"
+  },
+  {
+    "text": "Search for the string \"tests pass\" returned no results.",
+    "label": "quoted"
+  },
+  {
+    "text": "The CHANGELOG line reads \"typecheck passes on 5.6\".",
+    "label": "quoted"
+  },
+  {
+    "text": "You said the tests pass, but I see two failures.",
+    "label": "relayed"
+  },
+  {
+    "text": "According to the README, all tests pass.",
+    "label": "relayed"
+  },
+  {
+    "text": "The issue description says the build passes on CI.",
+    "label": "relayed"
+  },
+  {
+    "text": "You mentioned tsc is clean.",
+    "label": "relayed"
+  },
+  {
+    "text": "The PR description claims all tests pass.",
+    "label": "relayed"
+  },
+  {
+    "text": "Per the ticket, lint passes.",
+    "label": "relayed"
+  },
+  {
+    "text": "The previous session reported that all tests pass.",
+    "label": "relayed"
+  },
+  {
+    "text": "CI is green.",
+    "label": "relayed"
+  },
+  {
+    "text": "Tests pass in CI.",
+    "label": "relayed"
+  },
+  {
+    "text": "The docs say the build is clean.",
+    "label": "relayed"
+  },
+  {
+    "text": "The pipeline is green on main.",
+    "label": "relayed"
+  },
+  {
+    "text": "GitHub Actions is green for this commit.",
+    "label": "relayed"
+  },
+  {
+    "text": "As the readme notes, the tests pass on Linux only.",
+    "label": "relayed"
+  },
+  {
+    "text": "The commit message says all tests pass.",
+    "label": "relayed"
+  },
+  {
+    "text": "You told me the build passes on your machine.",
+    "label": "relayed"
+  },
+  {
+    "text": "The earlier summary states that lint is clean.",
+    "label": "relayed"
+  },
+  {
+    "text": "According to the changelog, tsc is clean since 1.2.",
+    "label": "relayed"
+  },
+  {
+    "text": "The comment on the PR says tests pass.",
+    "label": "relayed"
+  },
+  {
+    "text": "The remaining tests pass.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Apart from the flaky snapshot test, all tests pass.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "All other tests pass.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Only the unit tests pass.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Tests pass, apart from the known issue with test_legacy.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Everything except the e2e suite is green.",
+    "label": "scoped"
+  },
+  {
+    "text": "All tests pass except for two pre-existing snapshot mismatches.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "The tests pass on my machine, except the ones needing Docker.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Aside from the skipped tests, everything passes.",
+    "label": "scoped"
+  },
+  {
+    "text": "Lint is clean except for warnings in generated code.",
+    "label": "scoped",
+    "categories": [
+      "lint"
+    ]
+  },
+  {
+    "text": "The build is clean apart from deprecation warnings.",
+    "label": "scoped",
+    "categories": [
+      "build"
+    ]
+  },
+  {
+    "text": "Most tests pass.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Tests pass so far.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "The rest of the tests pass.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Excluding the pre-existing flaky test, the suite is green.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Nearly all tests pass.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Unrelated pre-existing issues aside, tsc is clean.",
+    "label": "scoped",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "All tests pass, ignoring the known slow test.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "The subset I ran passes.",
+    "label": "none"
+  },
+  {
+    "text": "Partial run: the holds tests pass.",
+    "label": "scoped",
+    "categories": [
+      "test"
+    ]
+  },
+  {
+    "text": "Do all tests pass?",
+    "label": "question"
+  },
+  {
+    "text": "Does the build pass now?",
+    "label": "question"
+  },
+  {
+    "text": "Is tsc clean?",
+    "label": "question"
+  },
+  {
+    "text": "Should I run the tests?",
+    "label": "question"
+  },
+  {
+    "text": "Are the tests green on your side?",
+    "label": "question"
+  },
+  {
+    "text": "Did the tests pass?",
+    "label": "question"
+  },
+  {
+    "text": "Is lint clean after this?",
+    "label": "question"
+  },
+  {
+    "text": "Would you like me to confirm all tests pass?",
+    "label": "question"
+  },
+  {
+    "text": "Can you check whether the build passes?",
+    "label": "question"
+  },
+  {
+    "text": "Which tests pass?",
+    "label": "question"
+  },
+  {
+    "text": "```\nall tests pass\n```",
+    "label": "code"
+  },
+  {
+    "text": "```sh\nnpm test\n# all 41 tests pass\n```",
+    "label": "code"
+  },
+  {
+    "text": "`all tests pass`",
+    "label": "code"
+  },
+  {
+    "text": "```\nTests: 41 passed, 41 total\n```",
+    "label": "code"
+  },
+  {
+    "text": "See `docs/testing.md` for how the build passes.",
+    "label": "future"
+  },
+  {
+    "text": "```ts\nexpect(build).toBe('green');\n```",
+    "label": "code"
+  },
+  {
+    "text": "~~~\nBuild succeeded.\n~~~",
+    "label": "code"
+  },
+  {
+    "text": "```json\n{\"status\": \"tests pass\"}\n```",
+    "label": "code"
+  },
+  {
+    "text": "Tests directory reorganized.",
+    "label": "none"
+  },
+  {
+    "text": "Added a test for the pass-through logic.",
+    "label": "none"
+  },
+  {
+    "text": "Passing the config object to the runner.",
+    "label": "none"
+  },
+  {
+    "text": "Bypass the cache.",
+    "label": "none"
+  },
+  {
+    "text": "The tests are located in test/.",
+    "label": "none"
+  },
+  {
+    "text": "I passed the flag through.",
+    "label": "none"
+  },
+  {
+    "text": "Green is the default theme colour.",
+    "label": "none"
+  },
+  {
+    "text": "The test ID is passed to the handler.",
+    "label": "none"
+  },
+  {
+    "text": "This function passes tests to the runner.",
+    "label": "none"
+  },
+  {
+    "text": "Made the CI badge green.",
+    "label": "none"
+  },
+  {
+    "text": "Did a first pass over the tests.",
+    "label": "none"
+  },
+  {
+    "text": "Tests: 5 files.",
+    "label": "none"
+  },
+  {
+    "text": "The button turns green on success.",
+    "label": "none"
+  },
+  {
+    "text": "Added three tests.",
+    "label": "none"
+  },
+  {
+    "text": "Wrote a build script.",
+    "label": "none"
+  },
+  {
+    "text": "Refactored the linter config.",
+    "label": "none"
+  },
+  {
+    "text": "Type errors are shown inline.",
+    "label": "none"
+  },
+  {
+    "text": "The build takes about two minutes.",
+    "label": "none"
+  },
+  {
+    "text": "The test harness passes the port as an argument.",
+    "label": "none"
+  },
+  {
+    "text": "Renamed passTests to runTests.",
+    "label": "none"
+  },
+  {
+    "text": "Updated the README.",
+    "label": "none"
+  },
+  {
+    "text": "Committed the changes.",
+    "label": "none"
+  },
+  {
+    "text": "The green theme is now the default.",
+    "label": "none"
+  },
+  {
+    "text": "We compile the templates at build time.",
+    "label": "none"
+  },
+  {
+    "text": "Tests run in about four seconds.",
+    "label": "none"
+  },
+  {
+    "text": "The build output goes to dist/.",
+    "label": "none"
+  },
+  {
+    "text": "Type checking runs in CI on every push.",
+    "label": "none"
+  },
+  {
+    "text": "Lint rules live in eslint.config.js.",
+    "label": "none"
+  },
+  {
+    "text": "I added a passing test and a failing one to demonstrate the reporter.",
+    "label": "negated"
+  },
+  {
+    "text": "The pass rate improved.",
+    "label": "none"
+  },
+  {
+    "text": "This will make the tests faster.",
+    "label": "none"
+  },
+  {
+    "text": "Coverage is at 91 percent.",
+    "label": "none"
+  },
+  {
+    "text": "The test database is seeded on startup.",
+    "label": "none"
+  },
+  {
+    "text": "Passed the token via header.",
+    "label": "none"
+  },
+  {
+    "text": "Users pass a callback to subscribe.",
+    "label": "none"
+  },
+  {
+    "text": "The lint step was moved before the build step.",
+    "label": "none"
+  },
+  {
+    "text": "Build artifacts are cached.",
+    "label": "none"
+  },
+  {
+    "text": "Green means the hold is active.",
+    "label": "none"
+  },
+  {
+    "text": "I ran the tests.",
+    "label": "none"
+  },
+  {
+    "text": "I ran npm run build.",
+    "label": "none"
+  },
+  {
+    "text": "The big rebuild launches right after those merge (it builds on their plumbing).",
+    "label": "none"
+  },
+  {
+    "text": "Smoke checks all green after each deploy: 307, 307, 200, health OK throughout.",
+    "label": "none"
+  },
+  {
+    "text": "Infrastructure: all green. Prod is at the latest commit, clean tree, zero open PRs.",
+    "label": "none"
+  },
+  {
+    "text": "CI | 15-way matrix, Python 3.9 to 3.13 across Linux, macOS and Windows, all green |",
+    "label": "relayed"
+  },
+  {
+    "text": "I also added a tests: passing badge, which is a stronger signal than any version number.",
+    "label": "none"
+  },
+  {
+    "text": "Server health: 25/25 PASS, zero FAIL, zero WARN.",
+    "label": "none"
+  },
+  {
+    "text": "Health check is 25/25 PASS, zero Falco alerts, and the config was never touched.",
+    "label": "none"
+  },
+  {
+    "text": "Four commits, all live, 238 tests passing, 25/25 health checks, zero Falco alerts.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Verification: typecheck clean, 1,025 tests green, design detector clean.",
+    "label": "assertive",
+    "categories": [
+      "typecheck",
+      "test"
+    ]
+  },
+  {
+    "text": "Gates: tsc clean, eslint 0 errors, 7,542 tests pass, every changed surface screenshot-verified locally.",
+    "label": "assertive",
+    "categories": [
+      "typecheck",
+      "lint",
+      "test"
+    ]
+  },
+  {
+    "text": "tsc clean for its files.",
+    "label": "scoped",
+    "categories": [
+      "typecheck"
+    ]
+  },
+  {
+    "text": "I left the deploy job in place; it gates deploys on tests passing, which is a genuine improvement.",
+    "label": "hedged"
+  },
+  {
+    "text": "I'll show you desktop and mobile as soon as it builds.",
+    "label": "future"
+  },
+  {
+    "text": "Supervised live test passed every applicable checklist point.",
+    "label": "none"
+  },
+  {
+    "text": "New folder structure | Live in production, supervised test passed, config in the repo |",
+    "label": "none"
+  },
+  {
+    "text": "Infra: all green: every pm2 process online, queues empty, disk at 50 percent, Redis alive.",
+    "label": "none"
+  },
+  {
+    "text": "Gates: typecheck, lint, 97 tests, production build, all green.",
+    "label": "assertive",
+    "categories": [
+      "test",
+      "typecheck",
+      "lint",
+      "build"
+    ]
+  },
+  {
+    "text": "Production is green across the board: app, public site and podcast feed all 200, uploads intact.",
+    "label": "none"
+  },
+  {
+    "text": "Every check passes on the live site: Intro button and modal in the served bundle.",
+    "label": "none"
+  },
+  {
+    "text": "The app passes every check right now (typecheck, lint, 72 tests).",
+    "label": "assertive",
+    "categories": [
+      "test",
+      "typecheck",
+      "lint",
+      "build"
+    ]
+  },
+  {
+    "text": "Merged #523, deployed, smoke all green (no 500s; the pricing GET stays public).",
+    "label": "none"
+  },
+  {
+    "text": "1,462 tests green, APK signed with the published key.",
+    "label": "assertive",
+    "categories": [
+      "test"
+    ],
+    "scope": "some"
+  },
+  {
+    "text": "Everything green.",
+    "label": "none"
+  },
+  {
+    "text": "Everything green: tsc, eslint and the 41 tests.",
+    "label": "assertive",
+    "categories": [
+      "test",
+      "typecheck",
+      "lint",
+      "build"
+    ]
+  },
+  {
+    "text": "While it builds, here's where this leaves things so you have the full picture:",
+    "label": "future"
+  },
+  {
+    "text": "Open a sponsor and you can edit everything and hit Approve (it builds the invoice from their ad duration automatically).",
+    "label": "none"
+  },
+  {
+    "text": "Once it builds I will deploy to staging.",
+    "label": "future"
+  },
+  {
+    "text": "It builds out the sidebar from the route table.",
+    "label": "none"
+  },
+  {
+    "text": "Confirmed: it builds now, and the typecheck is clean.",
+    "label": "assertive",
+    "categories": [
+      "build",
+      "typecheck"
+    ],
+    "scope": "all"
+  }
 ]
