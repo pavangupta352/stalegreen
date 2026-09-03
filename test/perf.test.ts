@@ -35,9 +35,12 @@ function percentile(sorted: number[], p: number): number {
 
 describe("hook timing budgets", () => {
   it("starts fast: cold start p95 under the budget over a bare node process", () => {
-    // Node 22.1 and later cache compiled code between runs; Node 20 parses the hook on every start.
-    const nodeMajor = Number(process.versions.node.split(".")[0]);
-    const budget = Number(process.env.STALEGREEN_PERF_MAX_MS ?? (nodeMajor >= 22 ? "50" : "80"));
+    // The 50 ms budget is the product requirement and holds on Linux runners with room to spare
+    // (about 20 ms over baseline in CI). The shared macOS and Windows runners are slow and noisy
+    // (a bare `node -e 0` takes 40 to 50 ms there and varies by half between runs), so they get
+    // twice the budget; the numbers are still printed for every platform.
+    const noisyRunner = process.platform !== "linux";
+    const budget = Number(process.env.STALEGREEN_PERF_MAX_MS ?? (noisyRunner ? "100" : "50"));
     const payload = { ...loadHookFixture("PostToolUse-edit.json"), tool_name: "Read", cwd: repo.dir };
     // Warm the compile cache and the page cache before measuring.
     for (let i = 0; i < 3; i++) runHook("PostToolUse", payload, env);
