@@ -79,10 +79,19 @@ export function codexTranscriptFiles(root = codexSessionsDir(), since?: Date): {
   return out.sort((a, b) => b.mtime - a.mtime);
 }
 
-async function* lines(file: string): AsyncGenerator<{ line: Line; bad: boolean }> {
+/** Records the reader uses; everything else (token counts, reasoning, world state) is skipped before parsing. */
+const INTERESTING = /"type":"(?:session_meta|turn_context|response_item|event_msg)"/;
+const SKIP_EVENT = /"type":"event_msg".*"type":"(?:token_count|agent_reasoning|agent_message|sub_agent_activity|mcp_tool_call_end|context_compacted|task_started|thread_settings_applied|web_search_end|thread_goal_updated)"/;
+const SKIP_ITEM = /"type":"response_item".*"type":"reasoning"/;
+
+async function* lines(file: string, all = false): AsyncGenerator<{ line: Line; bad: boolean }> {
   const rl = createInterface({ input: createReadStream(file, { encoding: "utf8" }), crlfDelay: Infinity });
   for await (const raw of rl) {
     if (!raw) continue;
+    if (!all) {
+      const head = raw.slice(0, 200);
+      if (!INTERESTING.test(head) || SKIP_EVENT.test(head) || SKIP_ITEM.test(head)) continue;
+    }
     try {
       yield { line: JSON.parse(raw) as Line, bad: false };
     } catch {

@@ -116,7 +116,7 @@ describe("replayCodexSession", () => {
       .turn("model-c")
       .user("now change the expiry")
       .patch(["/home/dev/app/src/lib/hold.ts"])
-      .raw("{not json at all")
+      .raw('{"timestamp":"2026-09-02T14:01:00.000Z","type":"response_item","payload":{broken')
       .say("Done. All 41 tests pass.")
       .done()
       .turn("model-d")

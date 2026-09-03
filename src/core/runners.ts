@@ -1049,10 +1049,14 @@ export function isSilent(output: string): boolean {
 
 /** Removes ANSI colour codes and carriage-return progress noise. */
 export function cleanOutput(output: string): string {
-  return output
-    .replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, "")
-    .replace(/\r\n/g, "\n")
-    .replace(/[^\n]*\r(?!\n)/g, "");
+  const text = output.replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, "").replace(/\r\n/g, "\n");
+  if (!text.includes("\r")) return text;
+  // A bare carriage return rewinds the line, so only what follows the last one is visible.
+  // Done by hand: a regex over a long progress-bar line with thousands of returns is quadratic.
+  return text
+    .split("\n")
+    .map((line) => (line.includes("\r") ? line.slice(line.lastIndexOf("\r") + 1) : line))
+    .join("\n");
 }
 
 /**

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { classify, detect, detectAll, isSilent, parseCounts, parseOutput, scriptCategory, stripWrappers } from "../src/core/runners.js";
+import { classify, cleanOutput, detect, detectAll, isSilent, parseCounts, parseOutput, scriptCategory, stripWrappers } from "../src/core/runners.js";
 import type { Category, RunVerdict } from "../src/core/grammar.js";
 
 const fixtureDir = join(__dirname, "fixtures", "runner-output");
@@ -16,6 +16,19 @@ interface FixtureEntry {
 }
 
 const index = JSON.parse(readFileSync(join(fixtureDir, "index.json"), "utf8")) as FixtureEntry[];
+
+describe("cleanOutput", () => {
+  it("keeps what a terminal would show after carriage returns, in linear time", () => {
+    expect(cleanOutput("a\rb\rc\nd\r\ne")).toBe("c\nd\ne");
+    expect(cleanOutput("\x1b[32mgreen\x1b[0m done")).toBe("green done");
+    const progress = Array.from({ length: 20000 }, (_, i) => `\r[${"=".repeat(i % 40)}] ${i}`).join("") + "\n Tests  41 passed (41)\n";
+    const started = process.hrtime.bigint();
+    const cleaned = cleanOutput(progress);
+    const ms = Number(process.hrtime.bigint() - started) / 1e6;
+    expect(cleaned).toBe(`[${"=".repeat(19999 % 40)}] 19999\n Tests  41 passed (41)\n`);
+    expect(ms).toBeLessThan(500);
+  });
+});
 
 describe("runner output fixtures", () => {
   it("cover every category with both pass and fail cases", () => {
