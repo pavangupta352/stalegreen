@@ -1,6 +1,6 @@
 {
   "name": "stalegreen",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hooks that keep a coding agent's green claims honest: verification runs are recorded unmasked, and \"done\" is blocked when the evidence is stale, failed or masked.",
   "type": "module",
   "license": "MIT",

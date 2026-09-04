@@ -21,7 +21,7 @@ Outright contradictions, where the last run failed and the agent still reported 
 
 ## What it does
 
-**Unmask.** Before a verification command runs (`pytest`, `pnpm test`, `tsc`, `eslint`, `cargo test`, `go test`, `next build` and about eighty others), the PreToolUse hook rewrites it so the full output is captured to a log, the last lines are shown to the agent, an explicit `[stalegreen] exit=<code> receipt=<id>` line is printed, and the exit status is preserved. Result-eating pipes and suffixes can no longer hide a failure. Commands that cannot be wrapped safely (heredocs, backgrounding, process substitution, `sudo`, existing redirects, watch modes) are left untouched.
+**Unmask.** Before a verification command runs (`pytest`, `pnpm test`, `tsc`, `eslint`, `cargo test`, `go test`, `next build` and about eighty others), the PreToolUse hook rewrites it so the full output is captured to a log, the last lines are shown to the agent, an explicit `[stalegreen] exit=<code> receipt=<id>` line is printed, and the exit status is preserved. The exit status is also written next to the log, and the hook trusts that file rather than the printed line, so output text alone can never create or refresh a receipt. Result-eating pipes and suffixes can no longer hide a failure. Commands that cannot be wrapped safely (heredocs, backgrounding, process substitution, `sudo`, existing redirects, watch modes) are left untouched.
 
 **Receipt.** After the command finishes, the runner's own summary line and the exit status become a receipt: command, runner, category, pass or fail, counts, timestamp and a working-tree fingerprint. Every file edit after that is an edit event.
 
@@ -80,7 +80,7 @@ It listens on `tools/pre-execute`, `tools/post-execute` and `agent/turn-stopping
 
 ## How freshness is decided
 
-The fingerprint is a hash of the content of every tracked and untracked file in the repository, read from the git index for unchanged files and from disk for modified ones, with documentation and other non-code paths excluded. It changes when any file content changes and it does not change on `git add` or `git commit`, so committing never turns fresh evidence stale. Edits made through heredocs, `sed -i`, subagents or anything else the transcript does not show are still caught. When the fingerprint is unavailable (outside git, or over its 150 ms budget) the gate falls back to edit events recorded after the receipt.
+The fingerprint is a hash of the content of every tracked and untracked file in the repository, read from the git index for unchanged files and from disk for modified ones, with documentation and other non-code paths excluded. It changes when any file content changes and it does not change on `git add` or `git commit`, so committing never turns fresh evidence stale. Edits made through heredocs, `sed -i`, subagents or anything else the transcript does not show are still caught. When the fingerprint is unavailable (outside git, or over its 150 ms budget) the gate falls back to edit events recorded after the receipt. A run that finished in the background is dated from its start, so edits made while it ran count as edits after it.
 
 ## What counts as masking
 

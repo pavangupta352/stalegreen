@@ -8,13 +8,13 @@
   },
   "metadata": {
     "description": "stalegreen: evidence hygiene hooks for coding agents",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "plugins": [
     {
       "name": "stalegreen",
       "description": "Keeps a coding agent's green claims honest: verification runs are recorded unmasked, and \"done\" is blocked when the evidence is stale, failed or masked. Zero tokens, zero network, zero telemetry.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Pavan Gupta",
         "email": "pavan.gupta.352@gmail.com"

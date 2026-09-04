@@ -2182,6 +2182,7 @@ function wrapper(head, id, log, tailLines, tee) {
   parts.push(`mkdir -p ${dir}`);
   parts.push(`{ ${head} ; } > "$__sg_log" 2>&1`);
   parts.push("__sg_rc=$?");
+  parts.push(`printf '%s\\n' "$__sg_rc" > "$__sg_log.exit"`);
   if (tee) for (const f of tee.files) parts.push(`cat "$__sg_log" ${tee.append ? ">>" : ">"} ${shQuote(f)}`);
   parts.push(`tail -n ${tailLines} "$__sg_log"`);
   parts.push(`printf '\\n[stalegreen] exit=%s receipt=${id} lines=%s log=%s\\n' "$__sg_rc" "$(wc -l < "$__sg_log" | tr -d ' ')" "$__sg_log"`);
@@ -2783,6 +2784,17 @@ function findMarkers(text) {
 function runLogPath(root, id) {
   return join4(sessionDir(root), "runs", `${id}.log`);
 }
+function runExitPath(log) {
+  return `${log}.exit`;
+}
+function readRunExit(log) {
+  try {
+    const text = readFileSync4(runExitPath(log), "utf8").trim();
+    return /^-?\d+$/.test(text) ? Number(text) : null;
+  } catch {
+    return null;
+  }
+}
 function readReceipts(root) {
   return readJsonl(join4(sessionDir(root), "receipts.jsonl"));
 }
@@ -3040,21 +3052,27 @@ ${input.stderr}` : ""}`;
   });
   if (markers.length > 0) {
     const out2 = [];
+    const seen = /* @__PURE__ */ new Set();
     for (const marker of markers) {
+      if (seen.has(marker.id)) continue;
+      seen.add(marker.id);
       const p = pendingAll.find((x) => x.id === marker.id) ?? (pending?.id === marker.id ? pending : null);
-      const logPath = marker.log ?? p?.log ?? runLogPath(ctx.root, marker.id);
+      const logPath = p?.log ?? marker.log ?? runLogPath(ctx.root, marker.id);
+      const exit = ctx.markerExits?.get(marker.id) ?? marker.exit;
       const output = readLog(logPath, ctx.config.maxLogBytes) ?? combined;
       const source = p?.command ?? input.command;
       const detections2 = detectRuns(source, ctx.config);
       const d = (p ? detections2.find((x) => x.notRun === null && x.runner === p.runner) : null) ?? detections2.find((x) => x.notRun === null) ?? detections2[0] ?? null;
       const cwd = resolve2(input.cwd, p?.cd ?? d?.cd ?? ".");
       const category = p?.category ?? d?.category ?? "test";
-      const parsed = parseOutput(category, output, { exit: marker.exit, interrupted: input.interrupted });
-      const extra = extraVerdict(ctx.config, p?.runner ?? d?.runner ?? "", output, marker.exit);
+      const parsed = parseOutput(category, output, { exit, interrupted: input.interrupted });
+      const extra = extraVerdict(ctx.config, p?.runner ?? d?.runner ?? "", output, exit);
       const runnerName = p?.runner ?? d?.runner ?? "unknown";
       const via = /^(?:npm|pnpm|yarn|bun) /.test(runnerName) ? scriptVia(output) : void 0;
+      const started = input.background && p ? p.ts : null;
       const receipt = base(d, {
         id: marker.id,
+        ...started ? { ts: started } : {},
         cwd,
         cmd: d?.segment.head ?? p?.command ?? input.command,
         source,
@@ -3062,7 +3080,7 @@ ${input.stderr}` : ""}`;
         ...via ? { via } : {},
         category,
         scope: p?.scope ?? d?.scope ?? "all",
-        exit: marker.exit,
+        exit,
         verdict: extra?.verdict ?? parsed.verdict,
         counts: parsed.counts,
         signal: extra?.signal ?? parsed.signal,
@@ -3070,7 +3088,7 @@ ${input.stderr}` : ""}`;
         wrapped: true,
         ...d?.quiet ? { quiet: true } : {},
         ...input.interrupted ? { interrupted: true } : {},
-        fingerprint: fingerprintFor(cwd),
+        fingerprint: started ? { head: null, tree: null, available: false, reason: "background" } : fingerprintFor(cwd),
         log: logPath
       });
       out2.push({ receipt, output });
@@ -3220,10 +3238,30 @@ ${input.stderr}` : ""}`;
     ...input.toolUseId ? { toolUseId: input.toolUseId } : {}
   };
 }
-function recordRun(input, ctx) {
+function trustMarkers(input, root, pendingAll, existing) {
+  const exits = /* @__PURE__ */ new Map();
+  const drop = /* @__PURE__ */ new Set();
+  for (const m of findMarkers(`${input.stdout ?? ""}
+${input.stderr ?? ""}`)) {
+    if (exits.has(m.id) || drop.has(m.id)) continue;
+    const p = pendingAll.find((x) => x.id === m.id);
+    const exit = p && !existing.has(m.id) ? readRunExit(p.log ?? runLogPath(root, m.id)) : null;
+    if (exit === null) drop.add(m.id);
+    else exits.set(m.id, exit);
+  }
+  if (drop.size === 0) return { input, exits };
+  const strip = (text) => text.split("\n").filter((line) => {
+    const m = MARKER_RE.exec(line);
+    return !(m && drop.has(m[2]));
+  }).join("\n");
+  return { input: { ...input, stdout: strip(input.stdout ?? ""), stderr: strip(input.stderr ?? "") }, exits };
+}
+function recordRun(rawInput, ctx) {
   const dir = sessionDir(ctx.root);
   ensureDir(dir);
   const pendingAll = readPending(ctx.root);
+  const existing = new Set(readReceipts(ctx.root).map((r) => r.id));
+  const { input, exits } = trustMarkers(rawInput, ctx.root, pendingAll, existing);
   const combined = `${input.stdout ?? ""}
 ${input.stderr ?? ""}`;
   const markers = findMarkers(combined);
@@ -3232,11 +3270,13 @@ ${input.stderr ?? ""}`;
   if (marker) pending = pendingAll.find((p) => p.id === marker.id) ?? null;
   else if (input.toolUseId) pending = pendingAll.filter((p) => p.toolUseId === input.toolUseId).pop() ?? null;
   else pending = pendingAll.filter((p) => p.command === input.command && !p.wrappedCommand).pop() ?? null;
-  const built = buildReceipts(input, ctx, pending, pendingAll);
+  const built = buildReceipts(input, { ...ctx, markerExits: exits }, pending, pendingAll);
   const receipts = [];
   built.forEach((b, i) => {
     const r = b.receipt;
-    if (r.id === "r-?") r.id = i === 0 && pending && !marker ? pending.id : nextReceiptId(dir);
+    if (r.id === "r-?") r.id = i === 0 && pending && !marker && !existing.has(pending.id) ? pending.id : nextReceiptId(dir);
+    if (existing.has(r.id)) return;
+    existing.add(r.id);
     if (!r.log) {
       const logPath = runLogPath(ctx.root, r.id);
       try {

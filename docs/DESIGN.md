@@ -91,6 +91,13 @@ Rules that fell out of testing 210 commands under sh, bash and zsh:
 - The receipt id exists before the command runs, so the output can be joined
   to it even when the marker line is cut off. Compound commands with two
   runners get one marker each.
+- The wrapper writes the exit status to `<log>.exit` before it prints the
+  marker line, and the hook trusts the file, not the line. A marker is
+  honoured only when the PreToolUse hook minted its id in this session, no
+  receipt carries that id yet, and the status file exists; the recorded
+  status wins over the printed one. Every other marker line is dropped from
+  the output before it is read, so nothing an agent prints can mint a
+  receipt, refresh an old one, or change the exit of a real run.
 
 **Permissions.** On Claude Code the hook returns an `allow` decision for the
 wrapped command only when the user's own permission rules already allow the
@@ -140,6 +147,12 @@ A receipt records what the runner said and how the command ended:
 nothing negative; `fail` needs a fail marker or a known non-zero exit. A
 receipt built from a masked, unwrapped run that says neither is
 `inconclusive` and `masked`, which is what MASKED at Stop means.
+
+A run that finished in the background (Codex reports `Script running with
+cell ID`, and `wait` delivers the output later) is dated from its start and
+carries no fingerprint: the tree may have changed while it ran, so the edits
+recorded since the start decide its freshness, not a hash taken when the
+output arrived. One receipt is ever written per id.
 
 ### Rules learned from real sessions
 

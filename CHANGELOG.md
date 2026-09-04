@@ -3,6 +3,25 @@
 All notable changes to stalegreen are recorded here. The format follows
 Keep a Changelog, and the project uses semantic versioning.
 
+## 0.1.1 (2026-09-04)
+
+### Fixed
+
+- The wrapper now writes the exit status of a run to `<log>.exit`, and the
+  hook trusts that file rather than the printed marker line. A marker is
+  honoured only when its id was minted by the PreToolUse hook in the same
+  session, no receipt carries the id yet, and the status file exists; other
+  marker lines are dropped before the output is read. Before this, a
+  `[stalegreen] exit=0 receipt=...` line printed by the agent could mint a
+  receipt, refresh an old one with the current tree, or change the exit of a
+  real run.
+- A verification run that finished in the background (Codex `wait`) is dated
+  from its start and carries no fingerprint, so edits made while it ran make
+  it stale. Before this, its fingerprint was taken when the output arrived
+  and edits made during the run went unnoticed.
+- One receipt is written per id; a pending record whose id already has a
+  receipt no longer swallows a later run.
+
 ## 0.1.0 (2026-09-03)
 
 ### Added
