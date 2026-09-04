@@ -20,7 +20,7 @@ DeepSeek Harness's own goal system says it has no independent evaluator. This pl
 dsh plugin add dsh-plugin-stalegreen
 ```
 
-The bundle inserts one plugin row, `stalegreen`, into the profile. Options go on that row in the profile's `cordis.patch.yml`:
+The package is on npm and listed in [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin). The bundle inserts one plugin row, `stalegreen`, into the profile. Options go on that row in the profile's `cordis.patch.yml`:
 
 ```yaml
 - id: stalegreen

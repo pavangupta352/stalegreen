@@ -66,7 +66,7 @@ npx stalegreen doctor
 
 `install` copies the compiled hook to `~/.stalegreen/bin/hook.js` and registers the same four events: for Claude Code in `~/.claude/settings.json`, for Codex in `~/.codex/hooks.json`. Add `--project` for the repository's `.claude/settings.json` or `.codex/hooks.json`, `--advisory` to record verdicts without blocking. `uninstall` removes them. Use one of the two routes for Claude Code, not both, or every run is recorded twice.
 
-For DeepSeek Harness there is a native Cordis plugin, [dsh-plugin-stalegreen](dsh-plugin-stalegreen/README.md):
+For DeepSeek Harness there is a native Cordis plugin, [dsh-plugin-stalegreen](dsh-plugin-stalegreen/README.md), listed in [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin):
 
 ```sh
 dsh plugin add dsh-plugin-stalegreen

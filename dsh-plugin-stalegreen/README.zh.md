@@ -20,7 +20,7 @@ DeepSeek Harness 自己的目标系统说明它没有独立的评估者。这个
 dsh plugin add dsh-plugin-stalegreen
 ```
 
-这个组合包会在 profile 中插入一行名为 `stalegreen` 的插件。选项写在 profile 的 `cordis.patch.yml` 里：
+包已发布到 npm，并收录于 [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)。这个组合包会在 profile 中插入一行名为 `stalegreen` 的插件。选项写在 profile 的 `cordis.patch.yml` 里：
 
 ```yaml
 - id: stalegreen
