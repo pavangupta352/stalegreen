@@ -1,8 +1,9 @@
 /**
  * The unmask rewrite: wraps a verification command so its full output lands
- * in a log file, the tail is shown to the agent, an explicit exit marker is
- * printed and the exit status is preserved. POSIX sh only: no bashisms and no
- * top-level `exit`, because the agent's shell may be persistent.
+ * in a log file, the exit status is written next to the log, the tail is
+ * shown to the agent, an explicit exit marker is printed and the exit status
+ * is preserved. POSIX sh only: no bashisms and no top-level `exit`, because
+ * the agent's shell may be persistent.
  */
 
 import { dirname } from "node:path";
@@ -75,6 +76,8 @@ function wrapper(head: string, id: string, log: string, tailLines: number, tee: 
   parts.push(`mkdir -p ${dir}`);
   parts.push(`{ ${head} ; } > "$__sg_log" 2>&1`);
   parts.push("__sg_rc=$?");
+  // The status on disk is what the hook trusts; the marker line below is for the agent.
+  parts.push(`printf '%s\\n' "$__sg_rc" > "$__sg_log.exit"`);
   if (tee) for (const f of tee.files) parts.push(`cat "$__sg_log" ${tee.append ? ">>" : ">"} ${shQuote(f)}`);
   parts.push(`tail -n ${tailLines} "$__sg_log"`);
   parts.push(`printf '\\n[stalegreen] exit=%s receipt=${id} lines=%s log=%s\\n' "$__sg_rc" "$(wc -l < "$__sg_log" | tr -d ' ')" "$__sg_log"`);

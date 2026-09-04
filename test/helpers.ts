@@ -41,6 +41,12 @@ export function makeHome(prefix = "stalegreen-home-"): { home: string; cleanup: 
   return { home, cleanup: () => rmSync(home, { recursive: true, force: true }) };
 }
 
+/** Lets the wall clock move on, so the next record written carries a later timestamp than the last. */
+export function nextMillisecond(): void {
+  const start = Date.now();
+  while (Date.now() <= start) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1);
+}
+
 export function readFixture(...parts: string[]): string {
   return readFileSync(join(repoRoot, "test", "fixtures", ...parts), "utf8");
 }

@@ -5,7 +5,7 @@ import { readDeferred, readEdits, readPending, readReceipts, readVerdicts } from
 import { deriveSession, readJsonl, sessionDir } from "../src/core/store.js";
 import { runCodexHook, responseText } from "../src/harness/codex/hooks.js";
 import { applyPatchEdits, parseCodexExecOutput } from "../src/harness/codex/output.js";
-import { loadHookFixture, makeHome, makeRepo, readFixture, type TempRepo } from "./helpers.js";
+import { loadHookFixture, makeHome, makeRepo, nextMillisecond, readFixture, type TempRepo } from "./helpers.js";
 
 let repo: TempRepo;
 let home: { home: string; cleanup: () => void };
@@ -133,10 +133,39 @@ describe("Codex PostToolUse", () => {
     const log = readPending(ROOT())[0]?.log as string;
     mkdirSync(dirname(log), { recursive: true });
     writeFileSync(log, vitestFail);
+    writeFileSync(`${log}.exit`, "1\n");
     const response = `Script failed\nWall time 4.0 seconds\nOutput:\n${vitestFail.split("\n").slice(-3).join("\n")}\n[stalegreen] exit=1 receipt=${id} lines=40 log=${log}\n`;
     runCodexHook("PostToolUse", bashDone(wrapped, response));
     const [r] = readReceipts(ROOT());
     expect(r).toMatchObject({ id, verdict: "fail", exit: 1, wrapped: true, masked: false });
+  });
+
+  it("dates a background run from its start, so an edit made while it ran makes it stale", () => {
+    const pre = runCodexHook("PreToolUse", payload("PreToolUse-bash.json", { tool_input: { command: "npx vitest run" } }));
+    const wrapped = (JSON.parse(pre.stdout ?? "{}") as { hookSpecificOutput: { updatedInput: { command: string } } }).hookSpecificOutput.updatedInput.command;
+    const pending = readPending(ROOT())[0]!;
+    runCodexHook("PostToolUse", bashDone(wrapped, "Script running with cell ID 4\nWall time 10.0 seconds\nOutput:\n RUN  v3.2.7\n"));
+    expect(readDeferred(ROOT())).toHaveLength(1);
+    expect(JSON.parse(runCodexHook("Stop", stopWith("All 41 tests pass.")).stdout ?? "{}")).toEqual({});
+
+    // An edit lands while the run is still going.
+    nextMillisecond();
+    writeFileSync(repo.file, "export const remaining = 0;\n");
+    runCodexHook("PostToolUse", { ...loadHookFixture("PostToolUse-apply-patch.json", "codex"), cwd: repo.dir, tool_input: { command: `*** Begin Patch\n*** Update File: ${repo.file}\n@@\n-1\n+0\n*** End Patch` } });
+
+    // The wrapper's records, as the shell left them, then the wait tool reports the finished run.
+    mkdirSync(dirname(pending.log!), { recursive: true });
+    writeFileSync(pending.log!, vitestPass);
+    writeFileSync(`${pending.log}.exit`, "0\n");
+    const done = payload("PostToolUse-bash.json", { tool_name: "wait", tool_input: { cell_id: 4 }, tool_response: `Script completed\nWall time 12.0 seconds\nOutput:\n${vitestPass}\n[stalegreen] exit=0 receipt=${pending.id} lines=12 log=${pending.log}\n` });
+    runCodexHook("PostToolUse", done);
+    const [receipt] = readReceipts(ROOT());
+    expect(receipt).toMatchObject({ id: pending.id, verdict: "pass", exit: 0, background: true, wrapped: true, ts: pending.ts });
+    expect(receipt?.fingerprint).toMatchObject({ available: false, reason: "background" });
+    const stop = JSON.parse(runCodexHook("Stop", stopWith("All 41 tests pass.")).stdout ?? "{}") as { decision?: string; reason?: string };
+    expect(stop.decision).toBe("block");
+    expect(stop.reason).toContain("is stale");
+    expect(stop.reason).toContain("hold.ts");
   });
 
   it("defers a run that is still going and finishes it from the wait tool's output", () => {

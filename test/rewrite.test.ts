@@ -65,7 +65,9 @@ describe("planRewrite", () => {
     expect(p.command).toContain("tail -n 40 \"$__sg_log\"");
     expect(p.command).toContain("receipt=r-0001");
     expect(p.command).toContain("(exit \"$__sg_rc\")");
-    expect(p.command).not.toMatch(/\bexit\b(?!=)(?! "\$__sg_rc")/);
+    expect(p.command).toContain(`printf '%s\\n' "$__sg_rc" > "$__sg_log.exit"`);
+    // No top-level exit builtin: the agent's shell may be persistent. The status file's name is not one.
+    expect(p.command).not.toMatch(/(?<!\.)\bexit\b(?!=)(?! "\$__sg_rc")/);
     expect(p.ids).toEqual(["r-0001"]);
   });
 

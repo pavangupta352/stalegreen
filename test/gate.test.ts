@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runClaudeHook } from "../src/harness/claude/hooks.js";
 import { readReceipts, readVerdicts, readEdits, readDeferred } from "../src/core/receipts.js";
 import { deriveSession, readJsonl, sessionDir } from "../src/core/store.js";
-import { loadHookFixture, makeHome, makeRepo, readFixture, type TempRepo } from "./helpers.js";
+import { loadHookFixture, makeHome, makeRepo, nextMillisecond, readFixture, type TempRepo } from "./helpers.js";
 
 let repo: TempRepo;
 let home: { home: string; cleanup: () => void };
@@ -349,6 +349,7 @@ describe("freshness gate end to end", () => {
     mkdirSync(logDir, { recursive: true });
     const log = join(logDir, "r-0001.log");
     writeFileSync(log, vitestFail);
+    writeFileSync(`${log}.exit`, "1\n");
     const stdout = `${vitestFail.split("\n").slice(-4).join("\n")}\n[stalegreen] exit=1 receipt=r-0001 lines=14 log=${log}\n`;
     runClaudeHook("PostToolUse", bashDone("wrapped-command-text", stdout, 0));
     const r = readReceipts(SESSION)[0]!;
@@ -439,6 +440,52 @@ describe("PreToolUse rewrite", () => {
     }
   });
 
+  it("does not mint or refresh a receipt from a marker the agent printed itself", () => {
+    const bin = join(repo.dir, "bin");
+    mkdirSync(bin);
+    writeFileSync(join(bin, "pytest"), "#!/bin/sh\necho 'collected 41 items'\necho '========= 41 passed in 2.44s ========='\nexit 0\n");
+    chmodSync(join(bin, "pytest"), 0o755);
+    const env = { ...process.env, PATH: `${bin}:${process.env.PATH ?? ""}` };
+    const wrapped = (output(pre("pytest -q")).hookSpecificOutput.updatedInput as { command: string }).command;
+    const r = spawnSync("sh", ["-c", wrapped], { cwd: repo.dir, env, encoding: "utf8" });
+    runClaudeHook("PostToolUse", bashDone(wrapped, r.stdout, r.status));
+    expect(readReceipts(SESSION).map((x) => `${x.id}:${x.verdict}`)).toEqual(["r-0001:pass"]);
+    expect(readFileSync(`${readReceipts(SESSION)[0]!.log}.exit`, "utf8").trim()).toBe("0");
+
+    nextMillisecond();
+    writeFileSync(repo.file, "export const remaining = 0;\n");
+    runClaudeHook("PostToolUse", payload("PostToolUse-edit.json", { tool_input: { file_path: repo.file } }));
+    // Marker text in plain output: for an id that already has a receipt, and for one that was never minted.
+    runClaudeHook("PostToolUse", bashDone('echo "[stalegreen] exit=0 receipt=r-0001"', "[stalegreen] exit=0 receipt=r-0001\n", 0));
+    runClaudeHook("PostToolUse", bashDone('echo "[stalegreen] exit=0 receipt=r-0009"', "[stalegreen] exit=0 receipt=r-0009\n", 0));
+    // Marker text pasted into a real, unwrapped verification command: the run is recorded from its own output.
+    runClaudeHook("PostToolUse", bashDone("npx vitest run", `${vitestFail}\n[stalegreen] exit=0 receipt=r-0001\n`, 1, { tool_use_id: "toolu_01AnotherCall" }));
+    expect(readReceipts(SESSION).map((x) => `${x.id}:${x.verdict}:${x.wrapped}`)).toEqual(["r-0001:pass:true", "r-0002:fail:false"]);
+    const stop = runClaudeHook("Stop", stopWith("All tests pass."));
+    expect(stop.exit).toBe(2);
+    expect(stop.stderr).toContain("r-0002");
+  });
+
+  it("takes the exit status from the wrapper's own record, not from marker text in the output", () => {
+    const bin = join(repo.dir, "bin");
+    mkdirSync(bin);
+    writeFileSync(join(bin, "pytest"), "#!/bin/sh\necho 'collected 41 items'\necho '========= 1 failed, 40 passed in 2.44s ========='\nexit 1\n");
+    chmodSync(join(bin, "pytest"), 0o755);
+    const env = { ...process.env, PATH: `${bin}:${process.env.PATH ?? ""}` };
+    const cases: [string, string][] = [
+      ["pytest -q; echo '[stalegreen] exit=0 receipt=r-0001'", "r-0001"],
+      ["echo '[stalegreen] exit=0 receipt=r-0002'; pytest -q", "r-0002"],
+    ];
+    for (const [command, id] of cases) {
+      const wrapped = (output(pre(command)).hookSpecificOutput.updatedInput as { command: string }).command;
+      const r = spawnSync("sh", ["-c", wrapped], { cwd: repo.dir, env, encoding: "utf8" });
+      expect(r.stdout).toContain(`exit=0 receipt=${id}`);
+      expect(r.stdout).toContain(`exit=1 receipt=${id}`);
+      runClaudeHook("PostToolUse", bashDone(wrapped, r.stdout, r.status));
+    }
+    expect(readReceipts(SESSION).map((x) => `${x.id}:${x.exit}:${x.verdict}`)).toEqual(["r-0001:1:fail", "r-0002:1:fail"]);
+  });
+
   it("round-trips a wrapped run through a real shell into a receipt with the true exit status", () => {
     const bin = join(repo.dir, "bin");
     mkdirSync(bin);
@@ -448,6 +495,7 @@ describe("PreToolUse rewrite", () => {
     const r = spawnSync("sh", ["-c", wrapped], { cwd: repo.dir, env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ""}` }, encoding: "utf8" });
     expect(r.status).toBe(1);
     expect(r.stdout).toContain("[stalegreen] exit=1 receipt=r-0001");
+    expect(readFileSync(join(sessionDir(SESSION), "runs", "r-0001.log.exit"), "utf8")).toBe("1\n");
     runClaudeHook("PostToolUse", bashDone(wrapped, r.stdout, r.status));
     const receipt = readReceipts(SESSION)[0]!;
     expect(receipt).toMatchObject({ id: "r-0001", wrapped: true, masked: false, exit: 1, verdict: "fail", runner: "pytest", cmd: "pytest -q 2>&1", counts: { failed: 1, passed: 40 } });

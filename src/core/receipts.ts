@@ -78,6 +78,8 @@ export interface ReceiptContext {
   now?: string;
   /** Overrides the fingerprint computation, for example during a transcript replay where no tree exists. */
   fingerprintFor?: (cwd: string) => Fingerprint;
+  /** Exit statuses the wrapper recorded on disk, by receipt id. When present they win over the printed marker. */
+  markerExits?: Map<string, number>;
 }
 
 export const MARKER_RE = /\[stalegreen\] exit=(-?\d+) receipt=([\w-]+)(?: lines=(\d+))?(?: log=(\S+))?/;
@@ -92,6 +94,21 @@ export function findMarkers(text: string): { exit: number; id: string; log: stri
 
 export function runLogPath(root: string, id: string): string {
   return join(sessionDir(root), "runs", `${id}.log`);
+}
+
+/** Where the wrapper leaves the exit status of a run: next to its log. */
+export function runExitPath(log: string): string {
+  return `${log}.exit`;
+}
+
+/** The exit status the wrapper recorded for a run, or null when it left none. */
+export function readRunExit(log: string): number | null {
+  try {
+    const text = readFileSync(runExitPath(log), "utf8").trim();
+    return /^-?\d+$/.test(text) ? Number(text) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function readReceipts(root: string): Receipt[] {
@@ -410,23 +427,31 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
   });
 
   if (markers.length > 0) {
-    // The wrapped path: each marker carries the exit status and the full output is on disk.
+    // The wrapped path: each marker names a run whose exit status and full output are on disk.
     const out: BuiltReceipt[] = [];
+    const seen = new Set<string>();
     for (const marker of markers) {
+      if (seen.has(marker.id)) continue;
+      seen.add(marker.id);
       const p = pendingAll.find((x) => x.id === marker.id) ?? (pending?.id === marker.id ? pending : null);
-      const logPath = marker.log ?? p?.log ?? runLogPath(ctx.root, marker.id);
+      const logPath = p?.log ?? marker.log ?? runLogPath(ctx.root, marker.id);
+      const exit = ctx.markerExits?.get(marker.id) ?? marker.exit;
       const output = readLog(logPath, ctx.config.maxLogBytes) ?? combined;
       const source = p?.command ?? input.command;
       const detections = detectRuns(source, ctx.config);
       const d = (p ? detections.find((x) => x.notRun === null && x.runner === p.runner) : null) ?? detections.find((x) => x.notRun === null) ?? detections[0] ?? null;
       const cwd = resolve(input.cwd, p?.cd ?? d?.cd ?? ".");
       const category = p?.category ?? d?.category ?? "test";
-      const parsed = parseOutput(category, output, { exit: marker.exit, interrupted: input.interrupted });
-      const extra = extraVerdict(ctx.config, p?.runner ?? d?.runner ?? "", output, marker.exit);
+      const parsed = parseOutput(category, output, { exit, interrupted: input.interrupted });
+      const extra = extraVerdict(ctx.config, p?.runner ?? d?.runner ?? "", output, exit);
       const runnerName = p?.runner ?? d?.runner ?? "unknown";
       const via = /^(?:npm|pnpm|yarn|bun) /.test(runnerName) ? scriptVia(output) : undefined;
+      // A run that finished in the background is dated from its start: the tree may have changed while it ran,
+      // so the edits recorded since then decide its freshness rather than a fingerprint taken now.
+      const started = input.background && p ? p.ts : null;
       const receipt = base(d, {
         id: marker.id,
+        ...(started ? { ts: started } : {}),
         cwd,
         cmd: d?.segment.head ?? p?.command ?? input.command,
         source,
@@ -434,7 +459,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
         ...(via ? { via } : {}),
         category,
         scope: p?.scope ?? d?.scope ?? "all",
-        exit: marker.exit,
+        exit,
         verdict: extra?.verdict ?? parsed.verdict,
         counts: parsed.counts,
         signal: extra?.signal ?? parsed.signal,
@@ -442,7 +467,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
         wrapped: true,
         ...(d?.quiet ? { quiet: true } : {}),
         ...(input.interrupted ? { interrupted: true } : {}),
-        fingerprint: fingerprintFor(cwd),
+        fingerprint: started ? { head: null, tree: null, available: false, reason: "background" } : fingerprintFor(cwd),
         log: logPath,
       });
       out.push({ receipt, output });
@@ -606,11 +631,42 @@ export function resolveLogRead(input: RunInput, ctx: ReceiptContext, receipts: R
   };
 }
 
-/** Builds and stores receipts, assigning ids and writing run logs. */
-export function recordRun(input: RunInput, ctx: ReceiptContext): Receipt[] {
+/**
+ * Marker lines in output are hints, not evidence. A marker is honoured when
+ * the PreToolUse hook minted its id in this session, no receipt carries that
+ * id yet, and the wrapper left the exit status on disk; the recorded status
+ * wins over the printed one. Every other marker line is dropped from the
+ * output, so nothing an agent prints can mint or refresh a receipt.
+ */
+function trustMarkers(input: RunInput, root: string, pendingAll: PendingRun[], existing: Set<string>): { input: RunInput; exits: Map<string, number> } {
+  const exits = new Map<string, number>();
+  const drop = new Set<string>();
+  for (const m of findMarkers(`${input.stdout ?? ""}\n${input.stderr ?? ""}`)) {
+    if (exits.has(m.id) || drop.has(m.id)) continue;
+    const p = pendingAll.find((x) => x.id === m.id);
+    const exit = p && !existing.has(m.id) ? readRunExit(p.log ?? runLogPath(root, m.id)) : null;
+    if (exit === null) drop.add(m.id);
+    else exits.set(m.id, exit);
+  }
+  if (drop.size === 0) return { input, exits };
+  const strip = (text: string): string =>
+    text
+      .split("\n")
+      .filter((line) => {
+        const m = MARKER_RE.exec(line);
+        return !(m && drop.has(m[2] as string));
+      })
+      .join("\n");
+  return { input: { ...input, stdout: strip(input.stdout ?? ""), stderr: strip(input.stderr ?? "") }, exits };
+}
+
+/** Builds and stores receipts, assigning ids and writing run logs. One receipt per id, ever. */
+export function recordRun(rawInput: RunInput, ctx: ReceiptContext): Receipt[] {
   const dir = sessionDir(ctx.root);
   ensureDir(dir);
   const pendingAll = readPending(ctx.root);
+  const existing = new Set(readReceipts(ctx.root).map((r) => r.id));
+  const { input, exits } = trustMarkers(rawInput, ctx.root, pendingAll, existing);
   const combined = `${input.stdout ?? ""}\n${input.stderr ?? ""}`;
   const markers = findMarkers(combined);
   const marker = markers[0] ?? null;
@@ -618,11 +674,13 @@ export function recordRun(input: RunInput, ctx: ReceiptContext): Receipt[] {
   if (marker) pending = pendingAll.find((p) => p.id === marker.id) ?? null;
   else if (input.toolUseId) pending = pendingAll.filter((p) => p.toolUseId === input.toolUseId).pop() ?? null;
   else pending = pendingAll.filter((p) => p.command === input.command && !p.wrappedCommand).pop() ?? null;
-  const built = buildReceipts(input, ctx, pending, pendingAll);
+  const built = buildReceipts(input, { ...ctx, markerExits: exits }, pending, pendingAll);
   const receipts: Receipt[] = [];
   built.forEach((b, i) => {
     const r = b.receipt;
-    if (r.id === "r-?") r.id = i === 0 && pending && !marker ? pending.id : nextReceiptId(dir);
+    if (r.id === "r-?") r.id = i === 0 && pending && !marker && !existing.has(pending.id) ? pending.id : nextReceiptId(dir);
+    if (existing.has(r.id)) return;
+    existing.add(r.id);
     if (!r.log) {
       const logPath = runLogPath(ctx.root, r.id);
       try {
