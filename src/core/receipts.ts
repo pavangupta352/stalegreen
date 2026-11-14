@@ -384,6 +384,11 @@ export function attributeOutput(parsed: ParsedCommand, detections: Detection[], 
   return out;
 }
 
+/** Output can reveal selectors hidden in runner configuration or environment. */
+function observedScope(scope: RunScope, counts: Counts): RunScope {
+  return (counts.deselected ?? 0) > 0 ? "subset" : scope;
+}
+
 /**
  * Builds receipts for a finished command. Pure apart from the fingerprint.
  * Ids are placeholders (`r-?`) until `recordRun` assigns them.
@@ -458,7 +463,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
         runner: runnerName,
         ...(via ? { via } : {}),
         category,
-        scope: p?.scope ?? d?.scope ?? "all",
+        scope: observedScope(p?.scope ?? d?.scope ?? "all", parsed.counts),
         exit,
         verdict: extra?.verdict ?? parsed.verdict,
         counts: parsed.counts,
@@ -566,6 +571,7 @@ export function buildReceipts(input: RunInput, ctx: ReceiptContext, pending: Pen
       cwd,
       exit,
       verdict,
+      scope: observedScope(d.scope, parsed.counts),
       counts: parsed.counts,
       signal,
       masked: analysis.masked,
@@ -624,6 +630,7 @@ export function resolveLogRead(input: RunInput, ctx: ReceiptContext, receipts: R
     ts: ctx.now ?? new Date().toISOString(),
     source: input.command,
     verdict: parsedOut.verdict,
+    scope: observedScope(original.scope, parsedOut.counts),
     counts: parsedOut.counts,
     signal: `log-read:${parsedOut.signal ?? "?"}`,
     maskReason: `${original.maskReason ?? "redirect"},read`,
