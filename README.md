@@ -107,6 +107,7 @@ Rules that keep verdicts honest:
 - A run is `pass` only with the runner's own positive summary and a known exit status of 0. `fail` needs a fail signal or a known non-zero exit. Everything else is `inconclusive`, never `fail`.
 - `0 failed`, `0 errors` and `No issues found` are passes.
 - Subset runs (`-k`, `-t`, a single file path, `-p` in a workspace) satisfy "tests pass" but not "all tests pass".
+- Pytest summaries reporting deselected tests also make a run a subset, including when selection comes from `PYTEST_ADDOPTS` or pytest configuration rather than visible command arguments. Skipped and expected-failure tests alone do not narrow the scope.
 - `--collect-only`, `--list`, `--help`, dry runs and watch modes are not verification runs.
 - Compound commands are split on `&&`, `||`, `;` and `|` outside quotes; the directory of a leading `cd` is recorded so a failing `tsc` in one package cannot go stale-check a claim about another.
 

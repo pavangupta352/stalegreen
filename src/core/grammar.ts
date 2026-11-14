@@ -17,6 +17,8 @@ export interface Counts {
   failed?: number;
   errors?: number;
   skipped?: number;
+  /** Deselected tests, also included in skipped for backwards compatibility. */
+  deselected?: number;
   total?: number;
 }
 

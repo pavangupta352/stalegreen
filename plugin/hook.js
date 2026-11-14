@@ -1705,6 +1705,7 @@ function tallies(s) {
     else if (k === "failed") out.failed = n;
     else if (k.startsWith("error")) out.errors = n;
     else if (k === "skipped" || k === "deselected" || k === "xfailed" || k === "todo") out.skipped = (out.skipped ?? 0) + n;
+    if (k === "deselected") out.deselected = (out.deselected ?? 0) + n;
   }
   return out;
 }
@@ -3012,6 +3013,9 @@ function attributeOutput(parsed, detections, output) {
   }
   return out;
 }
+function observedScope(scope, counts) {
+  return (counts.deselected ?? 0) > 0 ? "subset" : scope;
+}
 function buildReceipts(input, ctx, pending, pendingAll = pending ? [pending] : []) {
   const now = ctx.now ?? (/* @__PURE__ */ new Date()).toISOString();
   const combined = `${input.stdout ?? ""}${input.stderr ? `
@@ -3079,7 +3083,7 @@ ${input.stderr}` : ""}`;
         runner: runnerName,
         ...via ? { via } : {},
         category,
-        scope: p?.scope ?? d?.scope ?? "all",
+        scope: observedScope(p?.scope ?? d?.scope ?? "all", parsed.counts),
         exit,
         verdict: extra?.verdict ?? parsed.verdict,
         counts: parsed.counts,
@@ -3180,6 +3184,7 @@ ${input.stderr}` : ""}`;
       cwd,
       exit,
       verdict,
+      scope: observedScope(d.scope, parsed.counts),
       counts: parsed.counts,
       signal,
       masked: analysis.masked,
@@ -3232,6 +3237,7 @@ ${input.stderr}` : ""}`;
     ts: ctx.now ?? (/* @__PURE__ */ new Date()).toISOString(),
     source: input.command,
     verdict: parsedOut.verdict,
+    scope: observedScope(original.scope, parsedOut.counts),
     counts: parsedOut.counts,
     signal: `log-read:${parsedOut.signal ?? "?"}`,
     maskReason: `${original.maskReason ?? "redirect"},read`,

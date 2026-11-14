@@ -999,6 +999,7 @@ function tallies(s: string): Counts {
     else if (k === "failed") out.failed = n;
     else if (k.startsWith("error")) out.errors = n;
     else if (k === "skipped" || k === "deselected" || k === "xfailed" || k === "todo") out.skipped = (out.skipped ?? 0) + n;
+    if (k === "deselected") out.deselected = (out.deselected ?? 0) + n;
   }
   return out;
 }
